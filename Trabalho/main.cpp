@@ -16,6 +16,7 @@ int main()
 	cout << "Nela, voce pode verificar os dados de todos os candidatos dessa eleicao" << endl;
 	cout << "e tambem podera pesquisar e realizar estatisticas em cima dos candidatos" << endl << endl;
 	cout << "Por favor, selecione uma opcao abaixo:" <<endl;
+	leitura_arquivo();
 	return 0;
 }
 
@@ -25,7 +26,7 @@ void leitura_arquivo()
 	string line;
 	cout << "Acessando arquivo de dados..." << endl;
 	ifstream DataFile;
-	DataFile.open("candidatos_2018_BRASIL.csv");
+	DataFile.open("candidatos_2018_BRASIL_updated.csv");
 	if(!DataFile)
 	{
     cerr << "O arquivo de dados não pode ser acessado!";
