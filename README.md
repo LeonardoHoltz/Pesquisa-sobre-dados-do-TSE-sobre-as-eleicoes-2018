@@ -14,6 +14,9 @@ que de fato não concorreram no 1° turno da eleição e também os daqueles que
 já que seus nomes aparecem repetidos na tabela de dados.
 
 Com isso, o programa devolveria 3 tabelas:
+
 1°) Tabela de resultados dos candidatos que concorreram somente no 1° turno.
+
 2°) Tabela de resultados dos candidatos que concorreram no 2° turno.
+
 3°) Tabela de candidatos que tiveram sua candidatura anulada.
