@@ -9,6 +9,15 @@ using namespace std;
 /**************/
 int leitura_arquivo(); // Faz a leitura do arquivo onde estão os dados originalmente
 
+class candidatos
+{
+	public: 
+		int numero;
+		string nome, partido, situacao, cargo, UF;
+}
+
+
+
 int main()
 {
 	int opcao, teste_erro = 0;
