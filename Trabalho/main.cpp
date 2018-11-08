@@ -7,20 +7,23 @@ using namespace std;
 /**************/
 /* CABEÇALHOS */
 /**************/
-int leitura_arquivo(); // Faz a leitura do arquivo onde estão os dados originalmente
+ifstream abertura_arquivo(); // Faz a leitura do arquivo onde estão os dados originalmente
 
 class candidatos
 {
 	public: 
 		int numero;
 		string nome, partido, situacao, cargo, UF;
-}
+};
 
 
 
 int main()
 {
-	int opcao, teste_erro = 0;
+	int opcao = 0;
+	ifstream teste_erro;
+	
+	teste_erro = NULL;
 	
 	system("CLS");
 	cout << "Bem vindo a pesquisa de candidatos das eleicoes de 2018!" << endl << endl;
@@ -37,8 +40,8 @@ int main()
 		switch(opcao)
 		{
 			case 1:
-				teste_erro = leitura_arquivo();
-				if(teste_erro == -1)
+				teste_erro = abertura_arquivo();
+				if(teste_erro == NULL)
 				{
 					cout << "Certifique-se que o arquivo esta no mesmo diretorio do programa" << endl << endl;
 				}
@@ -52,28 +55,25 @@ int main()
 				cout << "Selecione uma opcao valida!" << endl << endl;
 				break;
 		}
-	} while((opcao != 1 && opcao != 2) || teste_erro == -1);
+	} while((opcao != 1 && opcao != 2) || teste_erro == NULL);
 	return 0;
 }
 
-int leitura_arquivo()
+ifstream abertura_arquivo()
 {
-	long int linhas = 0;
-	string line;
+	
 	cout << endl << "Acessando arquivo de dados..." << endl << endl;
 	ifstream DataFile;
 	DataFile.open("candidatos_2018_BRASIL_updated.csv");
 	if(!DataFile)
 	{
-    cerr << "O arquivo de dados nao pode ser acessado!" << endl;
-    return -1;   // chama o sistema para interrromper o programa
+		cerr << "O arquivo de dados nao pode ser acessado!" << endl;
+		return NULL;   // chama o sistema para interrromper o programa
 	}
 	else
 	{
 		cout << "Arquivo de dados acessado com sucesso!" << endl;
-		while(!DataFile.eof())
-			getline(DataFile, line);
-		DataFile.close();
-		return 0;
+		
+		return DataFile;
 	}
 }
