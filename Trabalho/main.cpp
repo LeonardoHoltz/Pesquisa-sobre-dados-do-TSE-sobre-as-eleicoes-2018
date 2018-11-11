@@ -1,29 +1,41 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <cstring>
 #include <stdlib.h>
 using namespace std;
+
+const int ALPHABET_TAM = 27;
+const int MAX_TAM = 30;
 
 /**************/
 /* CABEÇALHOS */
 /**************/
-ifstream abertura_arquivo(); // Faz a leitura do arquivo onde estão os dados originalmente
+int abertura_arquivo(); // Faz a leitura do arquivo onde estão os dados originalmente
+void leitura_arquivo();
 
 class candidatos
 {
 	public: 
-		int numero;
+		int numero; 
 		string nome, partido, situacao, cargo, UF;
+		
 };
 
+typedef struct
+{
+	candidato *filhos[ALPHABET_TAM];
+	bool eh_palavra; //flag que indica se o conteudo do nodo é uma palavra ou apenas um prefixo 
+}TrieNode;
 
+ifstream DataFile;
 
 int main()
 {
 	int opcao = 0;
-	ifstream teste_erro;
+	int teste_erro;
 	
-	teste_erro = NULL;
+	
 	
 	system("CLS");
 	cout << "Bem vindo a pesquisa de candidatos das eleicoes de 2018!" << endl << endl;
@@ -41,7 +53,7 @@ int main()
 		{
 			case 1:
 				teste_erro = abertura_arquivo();
-				if(teste_erro == NULL)
+				if(teste_erro == -1)
 				{
 					cout << "Certifique-se que o arquivo esta no mesmo diretorio do programa" << endl << endl;
 				}
@@ -55,25 +67,62 @@ int main()
 				cout << "Selecione uma opcao valida!" << endl << endl;
 				break;
 		}
-	} while((opcao != 1 && opcao != 2) || teste_erro == NULL);
+	} while((opcao != 1 && opcao != 2) || teste_erro == -1);
+	
+	leitura_arquivo();
+	
 	return 0;
 }
 
-ifstream abertura_arquivo()
+
+
+int abertura_arquivo()
 {
 	
 	cout << endl << "Acessando arquivo de dados..." << endl << endl;
-	ifstream DataFile;
+	
 	DataFile.open("candidatos_2018_BRASIL_updated.csv");
+	cout << "batata";
 	if(!DataFile)
 	{
+		cout << "nigga why isnt this shit workin ??";
 		cerr << "O arquivo de dados nao pode ser acessado!" << endl;
-		return NULL;   // chama o sistema para interrromper o programa
+		return -1;   // chama o sistema para interrromper o programa
 	}
 	else
 	{
 		cout << "Arquivo de dados acessado com sucesso!" << endl;
 		
-		return DataFile;
+		return 0;
 	}
 }
+
+void leitura_arquivo()
+{
+	string line;
+	
+	while(!(DataFile.eof()))
+	{
+		getline(DataFile, line, ';');// vai passando pelo arquivo, separando palavra por palavra com o token ';'
+		
+		
+		
+		//cout << line;, tempo de espera muito longo para printar tudo
+	}
+	
+	cout << "deu bom taoquei?";
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
