@@ -9,6 +9,9 @@ using namespace std;
 /**************/
 int leitura_arquivo(); // Faz a leitura do arquivo onde estão os dados originalmente
 
+/********/
+/* MAIN */
+/********/
 int main()
 {
 	int opcao, teste_erro = 0;
@@ -46,6 +49,10 @@ int main()
 	} while((opcao != 1 && opcao != 2) || teste_erro == -1);
 	return 0;
 }
+
+/***********/
+/* FUNÇÕES */
+/***********/
 
 int leitura_arquivo()
 {
