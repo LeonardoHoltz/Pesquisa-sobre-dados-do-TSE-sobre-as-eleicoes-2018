@@ -49,6 +49,8 @@ typedef struct Nodo_Trie TrieNode;
 int abertura_arquivo(); // Abre o arquivo onde estão os dados originalmente
 TrieNode inicializa_trie(); // Inicializa a árvore Trie com a criação da raíz
 void leitura_arquivo();
+void insere_Trie(TrieNode *raiz, string dado); //insere um candidato na arvore Trie
+bool pesquisa(TrieNode *raiz, string chave); // procura um candidato na arvore Trie
 
 
 /* Ponteiro do arquivo de entrada */
