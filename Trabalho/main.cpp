@@ -33,14 +33,15 @@ class candidatos
 /*********************/
 /* ESTRUTURA DA TRIE */
 /*********************/
-typedef struct
+struct Nodo_Trie
 {
 	bool eh_raiz;										// flag que indica se o nodo da árvore é a raíz ou não.
 	bool possui_candidato;					// flag que indica se o nodo da árvore possuí o dado de um candidato. Pode ser um nodo folha.
 	char letra;											// Letra guardará uma das letras do nome de um candidato.
 	candidatos *pessoa;							// Caso possui_candidato seja True, pessoa guardará os dados de um candidato.
-	TrieNode *filhos[ALPHABET_TAM];	// Array de ponteiros para os filhos daquele nodo. Cada indice representa um caractere. NULL indica que o nodo não possui um filho para o caractere representado pelo índice.
-}TrieNode;
+	Nodo_Trie *filhos[ALPHABET_TAM];	// Array de ponteiros para os filhos daquele nodo. Cada indice representa um caractere. NULL indica que o nodo não possui um filho para o caractere representado pelo índice.
+};
+typedef struct Nodo_Trie TrieNode;
 
 /**************/
 /* CABEÇALHOS */
@@ -100,14 +101,13 @@ int main()
 	/* Inicialização da Trie */
 	cout << "Criando arvore de prefixos." << endl << endl;
 	TrieNode raiz = inicializa_trie();
-
+	return 0;
 	/* Leitura de dados do arquivo */
 	leitura_arquivo();
 
 	return 0;
 }
 
-<<<<<<< HEAD
 /***********/
 /* FUNÇÕES */
 /***********/
@@ -125,7 +125,7 @@ int abertura_arquivo()
 	}
 	else
 	{
-		cout << "Arquivo de dados acessado com sucesso!" << endl;
+		cout << "Arquivo de dados acessado com sucesso!" << endl << endl;
 		return 0;
 	}
 }
@@ -133,11 +133,11 @@ int abertura_arquivo()
 /* Inicialização da Árvore de Prefixos */
 TrieNode inicializa_trie()
 {
-	TrieNode *raiz = new TrieNode;	// Inicializa o nodo.
+	TrieNode raiz;	// Inicializa o nodo.
 	raiz.eh_raiz = 1;		// Indica que o nodo a ser criado é a raíz da árvore
 	raiz.possui_candidato = 0; // A raíz não possui nenhum candidato
-	raiz.letra = '/0';	// A raíz não inicia com uma letra
-	raiz->pessoa = NULL;	// A raíz não possui nenhum candidato
+	raiz.letra = '0';	// A raíz não inicia com uma letra
+	raiz.pessoa = NULL;	// A raíz não possui nenhum candidato
 	for(int i = 0; i < ALPHABET_TAM; i++)
 		raiz.filhos[i] = NULL;	// Para cada caractere, a raíz ainda não possui um filho associado a aquele caractere.
 	return raiz;
