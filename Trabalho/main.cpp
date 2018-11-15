@@ -143,6 +143,40 @@ TrieNode inicializa_trie()
 	return raiz;
 }
 
+void insere_Trie(TrieNode *raiz, string dado)
+{
+	TrieNode *auxiliar = raiz;
+	int cont, indice;
+	
+	for(cont = 0; cont < dado.lenght();cont++)
+	{
+		indice = dado[cont] - 'a';
+		if(!(auxiliar->filhos[indice]))
+			auxiliar->filhos[indice] = inicializa_trie();
+		auxiliar = auxiliar->filhos[indice];
+	}
+	
+	auxiliar->eh_raiz = false;
+	auxiliar->possui_candidato = true;
+	
+}
+
+bool pesquisa(TrieNode *raiz, string chave)
+{
+	TrieNode *auxiliar = raiz;
+	int cont, indice;
+	
+	for(cont = 0; cont<chave.lenght(); cont++)
+	{
+		indice = chave[cont]-'a';
+		if(!(auxiliar->filhos[indice]))
+			return false;
+		auxiliar = auxiliar->filhos[indice];
+		
+	}
+	return (auxiliar != NULL && auxiliar->possui_candidato);
+}
+
 /* Leitura dos dados do arquivo */
 void leitura_arquivo()
 {
