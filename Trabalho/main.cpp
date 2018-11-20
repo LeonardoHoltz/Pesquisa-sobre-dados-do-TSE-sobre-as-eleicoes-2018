@@ -57,12 +57,18 @@ typedef struct Nodo_Trie TrieNode;
 /**********************/
 /* FUNÇÕES PRINCIPAIS */
 /**********************/
-int abertura_arquivo(); // Abre o arquivo onde estão os dados originalmente
-TrieNode *inicializa_trie(); // Inicializa a árvore Trie com a criação da raíz
-void leitura_arquivo(TrieNode *raiz); // Função que realiza a leitura do arquivo e guarda os dados na Trie
-TrieNode *novo_nodo(); // Função que cria um novo nodo da Trie
-void insere_Trie(TrieNode *raiz, string dado); //insere um candidato na arvore Trie
-bool pesquisa(TrieNode *raiz, string chave); // procura um candidato na arvore Trie
+int abertura_arquivo(); 											// Abre o arquivo onde estão os dados originalmente
+
+TrieNode *inicializa_trie(); 										// Inicializa a árvore Trie com a criação da raíz
+
+TrieNode *leitura_arquivo(TrieNode *raiz, int quantidade_linhas); 	// Função que realiza a leitura do arquivo e guarda os dados na Trie
+
+TrieNode *novo_nodo(); 												// Função que cria um novo nodo da Trie
+
+TrieNode *add_nome_trie(TrieNode *raiz, TrieNode *novo_candidato); 	// Função que adiciona o nome do candidato na árvore
+
+//void insere_Trie(TrieNode *raiz, string dado); //insere um candidato na arvore Trie
+//bool pesquisa(TrieNode *raiz, string chave); // procura um candidato na arvore Trie
 
 /**********************/
 /* FUNÇÕES AUXILIARES */
@@ -121,7 +127,8 @@ int main()
 	TrieNode *raiz = inicializa_trie();
 	
 	/* Leitura de dados do arquivo */
-	leitura_arquivo(raiz);
+	raiz = leitura_arquivo(raiz, teste_erro);
+	cout << "Arvore de prefixos criada" << endl;
 	return 0;
 }
 
@@ -132,6 +139,8 @@ int main()
 /* Abertura do arquivo de dados */
 int abertura_arquivo()
 {
+	int quantidade_linhas = 0;
+	string line;
 	cout << endl << "Acessando arquivo de dados..." << endl << endl;
 
 	DataFile.open("candidatos_2018_BRASIL_updated.csv");
@@ -143,7 +152,14 @@ int abertura_arquivo()
 	else
 	{
 		cout << "Arquivo de dados acessado com sucesso!" << endl << endl;
-		return 0;
+		while(!DataFile.eof())
+		{
+			getline(DataFile, line);
+			quantidade_linhas++;
+		}
+		DataFile.clear();
+		DataFile.seekg(0, ios::beg);
+		return quantidade_linhas;
 	}
 }
 
@@ -153,15 +169,15 @@ TrieNode *inicializa_trie()
 	TrieNode *raiz = new TrieNode;	// Inicializa o nodo.
 	raiz->eh_raiz = 1;		// Indica que o nodo a ser criado é a raíz da árvore
 	raiz->possui_candidato = 0; // A raíz não possui nenhum candidato
-	raiz->letra = ' ';	// A raíz não inicia com uma letra
+	raiz->letra = '0';	// A raíz não inicia com uma letra
 	
 	/* A raíz não inicia com os dados do candidato */
-	raiz->pessoa.numero = ' ';
-	raiz->pessoa.nome = ' ';
-	raiz->pessoa.situacao = ' ';
-	raiz->pessoa.cargo = ' ';
-	raiz->pessoa.UF = ' ';
-	raiz->pessoa.partido = ' ';
+	raiz->pessoa.numero = '0';
+	raiz->pessoa.nome = '0';
+	raiz->pessoa.situacao = '0';
+	raiz->pessoa.cargo = '0';
+	raiz->pessoa.UF = '0';
+	raiz->pessoa.partido = '0';
 	
 	for(int i = 0; i < ALPHABET_TAM; i++)
 		raiz->filhos[i] = NULL;	// Para cada caractere, a raíz ainda não possui um filho associado a aquele caractere.
@@ -205,18 +221,17 @@ bool pesquisa(TrieNode *raiz, string chave)
 */
 
 /* Leitura dos dados do arquivo */
-void leitura_arquivo(TrieNode *raiz)
+TrieNode *leitura_arquivo(TrieNode *raiz, int quantidade_linhas)
 {
 	// Strings para guardar os dados relevantes de cada candidato.
 	string line, estado_cand, cargo_cand, numero_cand, nome_cand, partido_cand, situacao_cand;
-	int i;	// Variavel para laços
-	
-	//while(!(DataFile.eof()))
-	//{
+	// Variaveis para laços
+	int i, j;
+	getline(DataFile, line);								// Pula a primeira linha
+	for(j = 0; j < quantidade_linhas - 2; j++)
+	{
 		TrieNode *novo_candidato = novo_nodo();
-		
 		/* Atribuição da Unidade de Federação */
-		getline(DataFile, line);
 		for(i = 0; i < 12; i++)
 			getline(DataFile, line, ';'); 					// vai passando pelo arquivo, separando palavra por palavra com o token ';', eliminando os dados irrelevantes para a pesquisa
 		getline(DataFile, line, ';');						// Recebe o dado da UF
@@ -254,12 +269,21 @@ void leitura_arquivo(TrieNode *raiz)
 		situacao_cand = retira_aspas(line);					// Retira as aspas da palavra
 		novo_candidato->pessoa.situacao = situacao_cand;	// Define o partido do candidato
 		
+		/*
 		cout << novo_candidato->pessoa.UF << endl;
 		cout << novo_candidato->pessoa.cargo << endl;
 		cout << novo_candidato->pessoa.numero << endl;
 		cout << novo_candidato->pessoa.nome << endl;
 		cout << novo_candidato->pessoa.partido << endl;
 		cout << novo_candidato->pessoa.situacao << endl;
+		*/
+		raiz = add_nome_trie(raiz, novo_candidato);
+		getline(DataFile, line);
+		//cout << raiz->filhos[12]->letra << endl;
+		//cout << raiz->filhos[12]->filhos[0]->letra << endl;
+	}
+	DataFile.close();
+	return raiz;
 }
 
 /* Criação de um novo nodo da Trie */
@@ -269,16 +293,73 @@ TrieNode *novo_nodo()
 	
 	novo->eh_raiz = false;
 	novo->possui_candidato = false;
-	novo->letra = 0;
-	novo->pessoa.numero = ' ';
-	novo->pessoa.nome = ' ';
-	novo->pessoa.partido = ' ';
-	novo->pessoa.situacao = ' ';
-	novo->pessoa.cargo = ' ';
-	novo->pessoa.UF = ' ';
+	novo->letra = '0';
+	novo->pessoa.numero = '0';
+	novo->pessoa.nome = '0';
+	novo->pessoa.partido = '0';
+	novo->pessoa.situacao = '0';
+	novo->pessoa.cargo = '0';
+	novo->pessoa.UF = '0';
 	for(int i = 0; i < ALPHABET_TAM; i++)
 		novo->filhos[i] = NULL;
 	return novo;
+}
+
+/* Criação de Prefixos na árvore, sempre que se adiciona um novo nome na árvore */
+TrieNode *add_nome_trie(TrieNode *raiz, TrieNode *novo_candidato)
+{
+	// Ponteiro auxiliar para a raíz
+	TrieNode *aux = raiz;
+	string nome_cand = novo_candidato->pessoa.nome;
+	int nome_tam = nome_cand.length();
+	for(int i = 0; i < nome_tam; i++)
+	{
+		/* Primeiro testamos o caso onde o caractere que estamos lidando no momento do laço
+		não é um espaço. Devemos fazer isso pois convencionamos para este programa que o 27°
+		índice guardará somente um filho nodo com o caractere espaço, e como o espaço está
+		posicionado na tabela ASCII de forma diferente da qual convencionamos para o array
+		de filhos (antes das letras maiusculas => num 32 na tabela ASCII, e depois das letras
+		maiusculas => indice 26 no nosso array), devemos fazer um caso especial para o caractere. */
+		
+		if(nome_cand[i] != 32)									// Caso o caractere não seja um espaço
+		{
+			// 65 = 'A' => conseguimos transformar o char em um índice
+			if(aux->filhos[nome_cand[i] - 65] == NULL)			// Caso o nodo ainda não tenha um filho daquela letra
+			{
+				TrieNode *nova_letra = novo_nodo();				// Criamos um novo nodo para ser um dos filhos do nodo pai (aux)
+				nova_letra->letra = nome_cand[i];				// Atribuímos a letra correta que representa aquele nodo
+				aux->filhos[nome_cand[i] - 65] = nova_letra;	// Fazemos a ligação entre o nodo pai e o nodo filho
+				aux = nova_letra;								// Atualizamos o ponteiro
+			}
+			else												// Caso o nodo pai já tenha um filho com aquela letra
+			{
+				aux = aux->filhos[nome_cand[i] - 65];			// Somente atualizamos o ponteiro auxiliar
+			}
+		}
+		else													// Caso o caractere seja um espaço
+		{
+			if(aux->filhos[nome_cand[i] - 6] == NULL)			// Caso o nodo ainda não tenha um filho daquela letra
+			{
+				TrieNode *nova_letra = novo_nodo();				// Criamos um novo nodo para ser um dos filhos do nodo pai (aux)
+				nova_letra->letra = nome_cand[i];				// Atribuímos a letra correta que representa aquele nodo
+				aux->filhos[nome_cand[i] - 6] = nova_letra;		// Fazemos a ligação entre o nodo pai e o nodo filho
+				aux = nova_letra;								// Atualizamos o ponteiro
+			}
+			else
+			{
+				aux = aux->filhos[nome_cand[i] - 6];			// Somente atualizamos o ponteiro auxiliar
+			}
+		}
+	}
+	// Coloca os dados do novo candidato no auxiliar
+	aux->pessoa.numero = novo_candidato->pessoa.numero;
+	aux->pessoa.nome = novo_candidato->pessoa.nome;
+	aux->pessoa.partido = novo_candidato->pessoa.partido;
+	aux->pessoa.situacao = novo_candidato->pessoa.situacao;
+	aux->pessoa.cargo = novo_candidato->pessoa.cargo;
+	aux->pessoa.UF = novo_candidato->pessoa.UF;
+	aux->possui_candidato = true;								// O nodo de novo_candidato tem o dado de um candidato
+	return raiz;
 }
 
 /**********************/
