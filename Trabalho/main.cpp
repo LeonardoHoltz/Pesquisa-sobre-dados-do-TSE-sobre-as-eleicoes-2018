@@ -2,6 +2,7 @@
 #include <fstream>
 #include <string>
 #include <cstring>
+#include <algorithm>
 #include <stdlib.h>
 using namespace std;
 
@@ -25,9 +26,15 @@ const int MAX_TAM = 30;
 
 class candidatos
 {
+	/* Candidato terá os seguintes dados:
+		Número: O número do candidato na urna para a eleição
+		Nome: Nome do candidato
+		Partido: Partido do candidato
+		Situação: Situação do candidato após as votações
+		Cargo: Cargo ao qual o candidato está tentando se eleger
+		UF: Estado/Distrito no qual o candidato estará representando */
 	public:
-		int numero;
-		string nome, partido, situacao, cargo, UF;
+		string nome, partido, situacao, cargo, UF, numero;
 };
 
 /*********************/
@@ -38,7 +45,7 @@ struct Nodo_Trie
 	bool eh_raiz;										// flag que indica se o nodo da árvore é a raíz ou não.
 	bool possui_candidato;					// flag que indica se o nodo da árvore possuí o dado de um candidato. Pode ser um nodo folha.
 	char letra;											// Letra guardará uma das letras do nome de um candidato.
-	candidatos *pessoa;							// Caso possui_candidato seja True, pessoa guardará os dados de um candidato.
+	candidatos pessoa;							// Caso possui_candidato seja True, pessoa guardará os dados de um candidato.
 	Nodo_Trie *filhos[ALPHABET_TAM];	// Array de ponteiros para os filhos daquele nodo. Cada indice representa um caractere. NULL indica que o nodo não possui um filho para o caractere representado pelo índice.
 };
 typedef struct Nodo_Trie TrieNode;
@@ -46,12 +53,21 @@ typedef struct Nodo_Trie TrieNode;
 /**************/
 /* CABEÇALHOS */
 /**************/
+
+/**********************/
+/* FUNÇÕES PRINCIPAIS */
+/**********************/
 int abertura_arquivo(); // Abre o arquivo onde estão os dados originalmente
-TrieNode inicializa_trie(); // Inicializa a árvore Trie com a criação da raíz
-void leitura_arquivo();
+TrieNode *inicializa_trie(); // Inicializa a árvore Trie com a criação da raíz
+void leitura_arquivo(TrieNode *raiz); // Função que realiza a leitura do arquivo e guarda os dados na Trie
+TrieNode *novo_nodo(); // Função que cria um novo nodo da Trie
 void insere_Trie(TrieNode *raiz, string dado); //insere um candidato na arvore Trie
 bool pesquisa(TrieNode *raiz, string chave); // procura um candidato na arvore Trie
 
+/**********************/
+/* FUNÇÕES AUXILIARES */
+/**********************/
+string retira_aspas(string palavra);	// Função que retira as aspas no começo e fim de uma palavra e a retorna
 
 /* Ponteiro do arquivo de entrada */
 ifstream DataFile;
@@ -102,11 +118,10 @@ int main()
 
 	/* Inicialização da Trie */
 	cout << "Criando arvore de prefixos." << endl << endl;
-	TrieNode raiz = inicializa_trie();
-	return 0;
+	TrieNode *raiz = inicializa_trie();
+	
 	/* Leitura de dados do arquivo */
-	leitura_arquivo();
-
+	leitura_arquivo(raiz);
 	return 0;
 }
 
@@ -133,18 +148,27 @@ int abertura_arquivo()
 }
 
 /* Inicialização da Árvore de Prefixos */
-TrieNode inicializa_trie()
+TrieNode *inicializa_trie()
 {
-	TrieNode raiz;	// Inicializa o nodo.
-	raiz.eh_raiz = 1;		// Indica que o nodo a ser criado é a raíz da árvore
-	raiz.possui_candidato = 0; // A raíz não possui nenhum candidato
-	raiz.letra = '0';	// A raíz não inicia com uma letra
-	raiz.pessoa = NULL;	// A raíz não possui nenhum candidato
+	TrieNode *raiz = new TrieNode;	// Inicializa o nodo.
+	raiz->eh_raiz = 1;		// Indica que o nodo a ser criado é a raíz da árvore
+	raiz->possui_candidato = 0; // A raíz não possui nenhum candidato
+	raiz->letra = ' ';	// A raíz não inicia com uma letra
+	
+	/* A raíz não inicia com os dados do candidato */
+	raiz->pessoa.numero = ' ';
+	raiz->pessoa.nome = ' ';
+	raiz->pessoa.situacao = ' ';
+	raiz->pessoa.cargo = ' ';
+	raiz->pessoa.UF = ' ';
+	raiz->pessoa.partido = ' ';
+	
 	for(int i = 0; i < ALPHABET_TAM; i++)
-		raiz.filhos[i] = NULL;	// Para cada caractere, a raíz ainda não possui um filho associado a aquele caractere.
+		raiz->filhos[i] = NULL;	// Para cada caractere, a raíz ainda não possui um filho associado a aquele caractere.
 	return raiz;
 }
 
+/*
 void insere_Trie(TrieNode *raiz, string dado)
 {
 	TrieNode *auxiliar = raiz;
@@ -178,20 +202,93 @@ bool pesquisa(TrieNode *raiz, string chave)
 	}
 	return (auxiliar != NULL && auxiliar->possui_candidato);
 }
+*/
 
 /* Leitura dos dados do arquivo */
-void leitura_arquivo()
+void leitura_arquivo(TrieNode *raiz)
 {
-	string line;
+	// Strings para guardar os dados relevantes de cada candidato.
+	string line, estado_cand, cargo_cand, numero_cand, nome_cand, partido_cand, situacao_cand;
+	int i;	// Variavel para laços
+	
+	//while(!(DataFile.eof()))
+	//{
+		TrieNode *novo_candidato = novo_nodo();
+		
+		/* Atribuição da Unidade de Federação */
+		getline(DataFile, line);
+		for(i = 0; i < 12; i++)
+			getline(DataFile, line, ';'); 					// vai passando pelo arquivo, separando palavra por palavra com o token ';', eliminando os dados irrelevantes para a pesquisa
+		getline(DataFile, line, ';');						// Recebe o dado da UF
+		estado_cand = retira_aspas(line);					// Retira as aspas da palavra
+		novo_candidato->pessoa.UF = estado_cand;			// Define a unidade de federação do candidato
+		
+		/* Atribuição do Cargo */
+		getline(DataFile, line, ';');						// Pula o próximo dado, irrelevante para a nossa pesquisa
+		getline(DataFile, line, ';');						// Recebe o dado do cargo
+		cargo_cand = retira_aspas(line);					// Retira as aspas da palavra
+		novo_candidato->pessoa.cargo = cargo_cand;			// Define o cargo para o qual o candidato está concorrendo
+		
+		/* Atribuição do Número */
+		getline(DataFile, line, ';');						// Pula o próximo dado, irrelevante para a nossa pesquisa
+		getline(DataFile, line, ';');						// Recebe o dado do número
+		numero_cand = retira_aspas(line);					// Retira as aspas da palavra
+		novo_candidato->pessoa.numero = numero_cand;		// Define o numero do candidato na urna
+		
+		/* Atribuição do Nome */
+		getline(DataFile, line, ';');						// Recebe o dado do nome
+		nome_cand = retira_aspas(line);						// Retira as aspas da palavra
+		novo_candidato->pessoa.nome = nome_cand;			// Define o numero do candidato na urna
+		
+		/* Atribuição do Partido */
+		for(i = 0; i < 11; i++)
+			getline(DataFile, line, ';'); 					// vai passando pelo arquivo, separando palavra por palavra com o token ';', eliminando os dados irrelevantes para a pesquisa
+		getline(DataFile, line, ';');						// Recebe o dado do partido
+		partido_cand = retira_aspas(line);					// Retira as aspas da palavra
+		novo_candidato->pessoa.partido = partido_cand;		// Define o partido do candidato
+		
+		/* Atribuição da Situação do candidato após as eleições */
+		for(i = 0; i < 23; i++)
+			getline(DataFile, line, ';'); 					// vai passando pelo arquivo, separando palavra por palavra com o token ';', eliminando os dados irrelevantes para a pesquisa
+		getline(DataFile, line, ';');						// Recebe o dado do partido
+		situacao_cand = retira_aspas(line);					// Retira as aspas da palavra
+		novo_candidato->pessoa.situacao = situacao_cand;	// Define o partido do candidato
+		
+		cout << novo_candidato->pessoa.UF << endl;
+		cout << novo_candidato->pessoa.cargo << endl;
+		cout << novo_candidato->pessoa.numero << endl;
+		cout << novo_candidato->pessoa.nome << endl;
+		cout << novo_candidato->pessoa.partido << endl;
+		cout << novo_candidato->pessoa.situacao << endl;
+}
 
-	while(!(DataFile.eof()))
-	{
-		getline(DataFile, line, ';');// vai passando pelo arquivo, separando palavra por palavra com o token ';'
+/* Criação de um novo nodo da Trie */
+TrieNode *novo_nodo()
+{
+	TrieNode *novo = new TrieNode;
+	
+	novo->eh_raiz = false;
+	novo->possui_candidato = false;
+	novo->letra = 0;
+	novo->pessoa.numero = ' ';
+	novo->pessoa.nome = ' ';
+	novo->pessoa.partido = ' ';
+	novo->pessoa.situacao = ' ';
+	novo->pessoa.cargo = ' ';
+	novo->pessoa.UF = ' ';
+	for(int i = 0; i < ALPHABET_TAM; i++)
+		novo->filhos[i] = NULL;
+	return novo;
+}
 
+/**********************/
+/* FUNÇÕES AUXILIARES */
+/**********************/
 
-
-		//cout << line;, tempo de espera muito longo para printar tudo
-	}
-
-	cout << "deu bom taoquei?";
+/* Retira as aspas duplas que estão a direita e a esquerda da palavra */
+string retira_aspas(string palavra)
+{
+	palavra.erase(find(palavra.begin(),palavra.end(), '"'));
+	palavra.erase(find(palavra.begin(),palavra.end(), '"'));
+	return palavra;
 }
