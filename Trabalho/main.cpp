@@ -32,9 +32,10 @@ class candidatos
 		Partido: Partido do candidato
 		Situação: Situação do candidato após as votações
 		Cargo: Cargo ao qual o candidato está tentando se eleger
-		UF: Estado/Distrito no qual o candidato estará representando */
+		UF: Estado/Distrito no qual o candidato estará representando
+		Turno: Turno no qual o candidato teve sua situação final definida */
 	public:
-		string nome, partido, situacao, cargo, UF, numero;
+		string nome, partido, situacao, cargo, UF, numero, turno;
 };
 
 /*********************/
@@ -42,10 +43,10 @@ class candidatos
 /*********************/
 struct Nodo_Trie
 {
-	bool eh_raiz;										// flag que indica se o nodo da árvore é a raíz ou não.
-	bool possui_candidato;					// flag que indica se o nodo da árvore possuí o dado de um candidato. Pode ser um nodo folha.
-	char letra;											// Letra guardará uma das letras do nome de um candidato.
-	candidatos pessoa;							// Caso possui_candidato seja True, pessoa guardará os dados de um candidato.
+	bool eh_raiz;						// flag que indica se o nodo da árvore é a raíz ou não.
+	bool possui_candidato;				// flag que indica se o nodo da árvore possuí o dado de um candidato. Pode ser um nodo folha.
+	char letra;							// Letra guardará uma das letras do nome de um candidato.
+	candidatos pessoa;					// Caso possui_candidato seja True, pessoa guardará os dados de um candidato.
 	Nodo_Trie *filhos[ALPHABET_TAM];	// Array de ponteiros para os filhos daquele nodo. Cada indice representa um caractere. NULL indica que o nodo não possui um filho para o caractere representado pelo índice.
 };
 typedef struct Nodo_Trie TrieNode;
@@ -67,25 +68,39 @@ TrieNode *novo_nodo(); 												// Função que cria um novo nodo da Trie
 
 TrieNode *add_nome_trie(TrieNode *raiz, TrieNode *novo_candidato); 	// Função que adiciona o nome do candidato na árvore
 
-//void insere_Trie(TrieNode *raiz, string dado); //insere um candidato na arvore Trie
-//bool pesquisa(TrieNode *raiz, string chave); // procura um candidato na arvore Trie
+void transfere_arq_bin(TrieNode *raiz);								// Função que transfere os dados da Trie para um arquivo binário
+
+void recursive_write(TrieNode *nodo);			// Função recursiva que guarda um nodo e seus filhos em um arquivo binario
 
 /**********************/
 /* FUNÇÕES AUXILIARES */
 /**********************/
-string retira_aspas(string palavra);	// Função que retira as aspas no começo e fim de uma palavra e a retorna
+string retira_aspas(string palavra);					// Função que retira as aspas no começo e fim de uma palavra e a retorna
 
-/* Ponteiro do arquivo de entrada */
+string minusculas_para_maiusculas(string palavra);		//Função que transforma as letras minúsculas da string de entrada em letras maiúsculas
+
+/**********************/
+/* STREAM DE ARQUIVOS */
+/**********************/
+
+/* Stream do arquivo de entrada */
 ifstream DataFile;
+
+/* Stream do arquivo binário para escrita*/
+ofstream BinaryFile;
+
+/* Stream do arquivo binário para leitura*/
+ifstream BinaryFile_r("dados_candidatos.bin");
 
 /********/
 /* MAIN */
 /********/
 int main()
 {
-	int opcao = 0;
+	int opcao = 0, opcao2 = 0, opcao3 = 0;
 	int teste_erro;
-
+	bool bin_existe = false;
+	string cand_user;
 
 	/* Menu do programa via seleção de opção */
 	system("CLS");
@@ -97,7 +112,8 @@ int main()
 	{
 		cout << "Por favor, selecione uma opcao abaixo:" <<endl << endl;
 		cout << "1 - Ler e inserir os dados do arquivo de candidatos no programa" << endl;
-		cout << "2 - Sair do programa" << endl << endl;
+		cout << "2 - Ler os dados a partir de um arquivo binario" << endl;
+		cout << "3 - Sair do programa" << endl << endl;
 
 		cin >> opcao;
 		switch(opcao)
@@ -110,6 +126,18 @@ int main()
 				}
 				break;
 			case 2:
+				if(!BinaryFile_r)
+				{
+					cout << endl << "Nao existe um arquivo binario com os dados dos candidatos." << endl << endl;
+					bin_existe = false;
+				}
+				else
+				{
+					cout << "Arquivo encontrado, carregando dados..." << endl << endl;
+					bin_existe = true;
+				}
+				break;
+			case 3:
 				cout << endl << "Encerrando o programa..." << endl;
 				return 0;
 				break;
@@ -118,17 +146,59 @@ int main()
 				cout << "Selecione uma opcao valida!" << endl << endl;
 				break;
 		}
-	} while((opcao != 1 && opcao != 2) || teste_erro == -1);
-
-	/* Área de código após a abertura do arquivo obter sucesso */
-
-	/* Inicialização da Trie */
-	cout << "Criando arvore de prefixos." << endl << endl;
-	TrieNode *raiz = inicializa_trie();
+	} while((opcao != 1 && opcao != 3 && (opcao != 2 && bin_existe)) || teste_erro == -1 || (opcao == 2 && !bin_existe));
 	
-	/* Leitura de dados do arquivo */
-	raiz = leitura_arquivo(raiz, teste_erro);
-	cout << "Arvore de prefixos criada" << endl;
+	if(!bin_existe)
+	{
+		/* Área de código após a abertura do arquivo de entrada obter sucesso */
+
+		/* Inicialização da Trie */
+		cout << "Criando arvore de prefixos..." << endl << endl;
+		TrieNode *raiz = inicializa_trie();
+		
+		/* Leitura de dados do arquivo */
+		raiz = leitura_arquivo(raiz, teste_erro);
+		cout << "Arvore de prefixos criada!" << endl << endl;
+		
+		/* Transferência dos dados para arquivo binário */
+		cout << "Transferindo dados para arquivo binario..." << endl << endl;
+		transfere_arq_bin(raiz);
+		cout << "Transferencia concluida!" << endl << endl;
+	}
+	//recarregar_trie();
+	do
+	{
+		cout << "Por favor, selecione uma nova opcao abaixo:" <<endl << endl;
+		cout << "1 - Pesquisar por um candidato" << endl;
+		cout << "2 - Gerar novas tabelas" << endl;
+		cout << "3 - Sair do programa" << endl << endl;
+		
+		cin >> opcao2;
+		switch(opcao2)
+		{
+			case 1:
+				cout << "Digite o nome completo do candidato que esta procurando, sem acentos: ";
+				cin.ignore();
+				getline(cin, cand_user);
+				cand_user = minusculas_para_maiusculas(cand_user);
+				break;
+			case 2:
+				cout << "Selecione uma das seguintes tabelas:" << endl << endl;
+				cout << "1 - Tabela de resultados dos candidatos que concorreram somente no 1o turno" << endl;
+				cout << "2 - Tabela de resultados dos candidatos que concorreram no 2o turno" << endl;
+				cout << "3 - Tabela de candidatos que tiveram sua candidatura anulada" << endl << endl;
+				cin >> opcao3;
+				break;
+			case 3:
+				cout << endl << "Encerrando o programa..." << endl;
+				return 0;
+				break;
+			default:
+				system("CLS");
+				cout << "Selecione uma opcao valida!" << endl << endl;
+				break;
+		}
+	} while(opcao2 != 3);
 	return 0;
 }
 
@@ -178,61 +248,34 @@ TrieNode *inicializa_trie()
 	raiz->pessoa.cargo = '0';
 	raiz->pessoa.UF = '0';
 	raiz->pessoa.partido = '0';
+	raiz->pessoa.turno = '0';
 	
 	for(int i = 0; i < ALPHABET_TAM; i++)
 		raiz->filhos[i] = NULL;	// Para cada caractere, a raíz ainda não possui um filho associado a aquele caractere.
 	return raiz;
 }
 
-/*
-void insere_Trie(TrieNode *raiz, string dado)
-{
-	TrieNode *auxiliar = raiz;
-	int cont, indice;
-	
-	for(cont = 0; cont < dado.lenght();cont++)
-	{
-		indice = dado[cont] - 'a';
-		if(!(auxiliar->filhos[indice]))
-			auxiliar->filhos[indice] = inicializa_trie();
-		auxiliar = auxiliar->filhos[indice];
-	}
-	
-	auxiliar->eh_raiz = false;
-	auxiliar->possui_candidato = true;
-	
-}
-
-bool pesquisa(TrieNode *raiz, string chave)
-{
-	TrieNode *auxiliar = raiz;
-	int cont, indice;
-	
-	for(cont = 0; cont<chave.lenght(); cont++)
-	{
-		indice = chave[cont]-'a';
-		if(!(auxiliar->filhos[indice]))
-			return false;
-		auxiliar = auxiliar->filhos[indice];
-		
-	}
-	return (auxiliar != NULL && auxiliar->possui_candidato);
-}
-*/
-
 /* Leitura dos dados do arquivo */
 TrieNode *leitura_arquivo(TrieNode *raiz, int quantidade_linhas)
 {
 	// Strings para guardar os dados relevantes de cada candidato.
-	string line, estado_cand, cargo_cand, numero_cand, nome_cand, partido_cand, situacao_cand;
+	string line, turno_cand, estado_cand, cargo_cand, numero_cand, nome_cand, partido_cand, situacao_cand;
 	// Variaveis para laços
 	int i, j;
 	getline(DataFile, line);								// Pula a primeira linha
 	for(j = 0; j < quantidade_linhas - 2; j++)
 	{
 		TrieNode *novo_candidato = novo_nodo();
+		
+		/* Atribuição do turno do candidato */
+		for(i = 0; i < 5; i++)
+			getline(DataFile, line, ';'); 					// vai passando pelo arquivo, separando palavra por palavra com o token ';', eliminando os dados irrelevantes para a pesquisa
+		getline(DataFile, line, ';');						// Recebe o dado do turno
+		turno_cand = retira_aspas(line);					// Retira as aspas da palavra
+		novo_candidato->pessoa.turno = turno_cand;			// Define o turno do candidato
+		
 		/* Atribuição da Unidade de Federação */
-		for(i = 0; i < 12; i++)
+		for(i = 0; i < 6; i++)
 			getline(DataFile, line, ';'); 					// vai passando pelo arquivo, separando palavra por palavra com o token ';', eliminando os dados irrelevantes para a pesquisa
 		getline(DataFile, line, ';');						// Recebe o dado da UF
 		estado_cand = retira_aspas(line);					// Retira as aspas da palavra
@@ -300,6 +343,7 @@ TrieNode *novo_nodo()
 	novo->pessoa.situacao = '0';
 	novo->pessoa.cargo = '0';
 	novo->pessoa.UF = '0';
+	novo->pessoa.turno = '0';
 	for(int i = 0; i < ALPHABET_TAM; i++)
 		novo->filhos[i] = NULL;
 	return novo;
@@ -352,14 +396,59 @@ TrieNode *add_nome_trie(TrieNode *raiz, TrieNode *novo_candidato)
 		}
 	}
 	// Coloca os dados do novo candidato no auxiliar
-	aux->pessoa.numero = novo_candidato->pessoa.numero;
-	aux->pessoa.nome = novo_candidato->pessoa.nome;
-	aux->pessoa.partido = novo_candidato->pessoa.partido;
-	aux->pessoa.situacao = novo_candidato->pessoa.situacao;
-	aux->pessoa.cargo = novo_candidato->pessoa.cargo;
-	aux->pessoa.UF = novo_candidato->pessoa.UF;
-	aux->possui_candidato = true;								// O nodo de novo_candidato tem o dado de um candidato
+	
+	/*Se já houver um candidato no fim do nome, devemos fazer um
+	teste para podermos substituírmos alguns dos dados dele */
+	if(aux->possui_candidato)
+	{
+		/* Se a situacao do novo candidato for "SUPLENTE", "ELEITO" ou "NAO ELEITO", devemos atualizar suas informações, pois as antigas não servem mais */
+		if(novo_candidato->pessoa.situacao == "SUPLENTE" || novo_candidato->pessoa.situacao == "ELEITO" || novo_candidato->pessoa.situacao == "NAO ELEITO")
+		{
+			aux->pessoa.numero = novo_candidato->pessoa.numero;
+			aux->pessoa.nome = novo_candidato->pessoa.nome;
+			aux->pessoa.partido = novo_candidato->pessoa.partido;
+			aux->pessoa.situacao = novo_candidato->pessoa.situacao;
+			aux->pessoa.cargo = novo_candidato->pessoa.cargo;
+			aux->pessoa.UF = novo_candidato->pessoa.UF;
+			aux->pessoa.turno = novo_candidato->pessoa.turno;
+		}
+	}
+	/* Se não houver um candidato ainda no final do nome, somente
+	adiciona os dados do novo candidato através do ponteiro auxiliar */
+	else
+	{
+		aux->pessoa.numero = novo_candidato->pessoa.numero;
+		aux->pessoa.nome = novo_candidato->pessoa.nome;
+		aux->pessoa.partido = novo_candidato->pessoa.partido;
+		aux->pessoa.situacao = novo_candidato->pessoa.situacao;
+		aux->pessoa.cargo = novo_candidato->pessoa.cargo;
+		aux->pessoa.UF = novo_candidato->pessoa.UF;
+		aux->pessoa.turno = novo_candidato->pessoa.turno;
+		aux->possui_candidato = true;								// O nodo de novo_candidato tem o dado de um candidato
+	}
 	return raiz;
+}
+
+/* Guarda a árvore trie em um arquivo binário */
+void transfere_arq_bin(TrieNode *raiz)
+{
+	BinaryFile.open("dados_candidatos.bin", ios::binary);
+	recursive_write(raiz);
+	BinaryFile.close();
+}
+
+/* Guarda um nodo e seus filhos em um arquivo binario, recursivamente */
+void recursive_write(TrieNode *nodo)
+{
+	BinaryFile.write((char *)&nodo, sizeof(TrieNode));
+	/* Teste para chamar recursão para os filhos */
+	for(int i = 0; i < ALPHABET_TAM; i++)
+	{
+		if(nodo->filhos[i] != NULL)
+		{
+			recursive_write(nodo->filhos[i]);
+		}
+	}
 }
 
 /**********************/
@@ -371,5 +460,17 @@ string retira_aspas(string palavra)
 {
 	palavra.erase(find(palavra.begin(),palavra.end(), '"'));
 	palavra.erase(find(palavra.begin(),palavra.end(), '"'));
+	return palavra;
+}
+
+/* Transforma as letras minúsculas da string de entrada em letras maiúsculas */
+string minusculas_para_maiusculas(string palavra)
+{
+	int tamanho_palavra = palavra.length();
+	for(int i = 0; i < tamanho_palavra; i++)
+	{
+		if(palavra[i] >= 97 && palavra[i] <= 122)
+			palavra[i] = palavra[i] - 32;
+	}
 	return palavra;
 }
