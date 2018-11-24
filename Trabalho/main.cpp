@@ -64,20 +64,15 @@ int abertura_arquivo(); 											// Abre o arquivo onde estão os dados origin
 
 TrieNode *inicializa_trie(); 										// Inicializa a árvore Trie com a criação da raíz
 
-void leitura_arquivo(int quantidade_linhas); 						// Função que realiza a leitura do arquivo e guarda os dados na Trie
+void leitura_arquivo(int quantidade_linhas); 						// Função que realiza a leitura do arquivo bruto e guarda os dados em um arquivo binario
 
 TrieNode *novo_nodo(); 												// Função que cria um novo nodo da Trie
-void le_arquivo();
 
-TrieNode *add_candidatos_trie(TrieNode *raiz);					 	// Função que adiciona os candidatos na árvore
+TrieNode *add_candidatos_trie(TrieNode *raiz);					 	// Função que adiciona os candidatos na árvore a partir do arquivo binário
 
-void transfere_arq_bin(TrieNode *raiz);								// Função que transfere os dados da Trie para um arquivo binário
+void pesquisa_trie(TrieNode *raiz, string nome_usuario);			// Função que pesquisa um candidato na Trie e mostra os dados dele na tela
 
-void recursive_write(TrieNode *nodo);								// Função recursiva que guarda um nodo e seus filhos em um arquivo binario
-
-TrieNode *recarregar_trie();										// Função que recarrega a Trie a partir do arquivo binario
-
-void recarrega_trie_recursive(TrieNode *nodo_pai, int indice);		// Função recursiva que recupera os nodos de uma trie
+void cria_tabelas_trie(TrieNode *nodo, int opcao);					// Função que cria novas tabelas, mais organizadas que a original, a partir da trie
 
 /**********************/
 /* FUNÇÕES AUXILIARES */
@@ -167,11 +162,9 @@ int main()
 	cout << "Criando arvore de prefixos" << endl << endl;
 	raiz = inicializa_trie();											// Inicializa a Trie somente com a raiz
 	
-	le_arquivo();
-	
-	//raiz = add_candidatos_trie(raiz);									// Adiciona os candidatos na arvore a partir do arquivo binario, retornando a raiz no fim
+	raiz = add_candidatos_trie(raiz);									// Adiciona os candidatos na arvore a partir do arquivo binario, retornando a raiz no fim
 	cout << "Arvore de prefixos criada, todos os candidatos ja foram inseridos!" << endl << endl;
-	/*
+	
 	do
 	{
 		cout << "Por favor, selecione uma nova opcao abaixo:" <<endl << endl;
@@ -183,17 +176,22 @@ int main()
 		switch(opcao2)
 		{
 			case 1:
-				cout << "Digite o nome completo do candidato que esta procurando, sem acentos: ";
+				cout << endl << "Digite o nome completo do candidato que esta procurando, sem acentos: ";
 				cin.ignore();
 				getline(cin, cand_user);
 				cand_user = minusculas_para_maiusculas(cand_user);
+				pesquisa_trie(raiz, cand_user);
 				break;
 			case 2:
-				cout << "Selecione uma das seguintes tabelas:" << endl << endl;
+				cout << endl<< "Selecione uma das seguintes tabelas:" << endl << endl;
 				cout << "1 - Tabela de resultados dos candidatos que concorreram somente no 1o turno" << endl;
 				cout << "2 - Tabela de resultados dos candidatos que concorreram no 2o turno" << endl;
 				cout << "3 - Tabela de candidatos que tiveram sua candidatura anulada" << endl << endl;
 				cin >> opcao3;
+				if(opcao3 < 1 || opcao3 > 3)
+					cout << endl << "Voce digitou uma opcao invalida!" << endl << endl;
+				else
+					cria_tabelas_trie(raiz, opcao3);
 				break;
 			case 3:
 				cout << endl << "Encerrando o programa..." << endl;
@@ -205,7 +203,7 @@ int main()
 				break;
 		}
 	} while(opcao2 != 3);
-	*/
+	
 	return 0;
 }
 
@@ -364,16 +362,22 @@ TrieNode *novo_nodo()
 	return novo;
 }
 
-void le_arquivo()
+/* Criação de Prefixos na árvore, sempre que se adiciona um novo  candidato e seu nome na árvore */
+TrieNode *add_candidatos_trie(TrieNode *raiz)
 {
-	size_t tamanho;
-	int i = 0;
-	string new_string;
-	TrieNode novo_candidato;
+	int nome_tam;					// Variável para o tamanho do nome do candidato
+	TrieNode *aux;					// Ponteiro auxiliar para a raíz
+	TrieNode novo_candidato;		// Estrutura onde o candidato será mantido quando ele for lido do arquivo
+	string new_string, nome_cand;
+	size_t tamanho;					// Tamanho da próxima string a ser lida do arquivo
+	int j = 0;							// Variavel para laço
+	
+	/* Abertura do arquivo para leitura */
 	ifstream BinaryFile;
 	BinaryFile.open("dados_candidatos.bin", ios::in | ios::binary);
-	while(i < QUANTIDADE_CANDIDATOS)
-	{
+	
+	while(j < QUANTIDADE_CANDIDATOS)
+	{	
 		BinaryFile.read((char *)&tamanho, sizeof(tamanho));
 		new_string.resize(tamanho);
 		BinaryFile.read((char *)&new_string[0], tamanho);
@@ -409,69 +413,7 @@ void le_arquivo()
 		BinaryFile.read((char *)&new_string[0], tamanho);
 		novo_candidato.pessoa.situacao = new_string;
 		
-		cout << novo_candidato.pessoa.numero << " " << novo_candidato.pessoa.nome << " ";
-		cout << novo_candidato.pessoa.partido << " " << novo_candidato.pessoa.cargo << " ";
-		cout << novo_candidato.pessoa.UF << " " << novo_candidato.pessoa.turno << endl;
-		
-		i++;
-	}
-	BinaryFile.close();
-	cout << "teste" << endl;
-}
-
-/* Criação de Prefixos na árvore, sempre que se adiciona um novo  candidato e seu nome na árvore */
-TrieNode *add_candidatos_trie(TrieNode *raiz)
-{
-	int nome_tam;					// Variável para o tamanho do nome do candidato
-	TrieNode *aux;					// Ponteiro auxiliar para a raíz
-	TrieNode *novo_candidato;		// Estrutura onde o candidato será mantido quando ele for lido do arquivo
-	string new_string, nome_cand;
-	size_t tamanho;					// Tamanho da próxima string a ser lida do arquivo
-	int j;							// Variavel para laço
-	
-	/* Abertura do arquivo para leitura */
-	ifstream BinaryFile;
-	BinaryFile.open("dados_candidatos.bin", ios::in | ios::binary);
-	
-	while(j < QUANTIDADE_CANDIDATOS)
-	{	
-		BinaryFile.read((char *)&tamanho, sizeof(tamanho));
-		new_string.resize(tamanho);
-		BinaryFile.read((char *)&new_string[0], tamanho);
-		novo_candidato->pessoa.turno = new_string;
-		
-		BinaryFile.read((char *)&tamanho, sizeof(tamanho));
-		new_string.resize(tamanho);
-		BinaryFile.read((char *)&new_string[0], tamanho);
-		novo_candidato->pessoa.UF = new_string;
-		
-		BinaryFile.read((char *)&tamanho, sizeof(tamanho));
-		new_string.resize(tamanho);
-		BinaryFile.read((char *)&new_string[0], tamanho);
-		novo_candidato->pessoa.cargo = new_string;
-		
-		BinaryFile.read((char *)&tamanho, sizeof(tamanho));
-		new_string.resize(tamanho);
-		BinaryFile.read((char *)&new_string[0], tamanho);
-		novo_candidato->pessoa.numero = new_string;
-		
-		BinaryFile.read((char *)&tamanho, sizeof(tamanho));
-		new_string.resize(tamanho);
-		BinaryFile.read((char *)&new_string[0], tamanho);
-		novo_candidato->pessoa.nome = new_string;
-		
-		BinaryFile.read((char *)&tamanho, sizeof(tamanho));
-		new_string.resize(tamanho);
-		BinaryFile.read((char *)&new_string[0], tamanho);
-		novo_candidato->pessoa.partido = new_string;
-		
-		BinaryFile.read((char *)&tamanho, sizeof(tamanho));
-		new_string.resize(tamanho);
-		BinaryFile.read((char *)&new_string[0], tamanho);
-		novo_candidato->pessoa.situacao = new_string;
-		
-		nome_cand = novo_candidato->pessoa.nome;
-		cout << nome_cand << endl;
+		nome_cand = novo_candidato.pessoa.nome;
 		nome_tam = nome_cand.length();
 		aux = raiz;													// Colocamos o ponteiro auxiliar na raiz
 		for(int i = 0; i < nome_tam; i++)
@@ -520,34 +462,112 @@ TrieNode *add_candidatos_trie(TrieNode *raiz)
 		if(aux->possui_candidato)
 		{
 			/* Se a situacao do novo candidato for "SUPLENTE", "ELEITO", "ELEITO POR QP", "ELEITO POR MEDIA" ou "NAO ELEITO", devemos atualizar suas informações, pois as antigas não servem mais */
-			if(novo_candidato->pessoa.situacao == "SUPLENTE" || novo_candidato->pessoa.situacao == "ELEITO" || novo_candidato->pessoa.situacao == "ELEITO POR QP" || novo_candidato->pessoa.situacao == "ELEITO POR MEDIA" || novo_candidato->pessoa.situacao == "NAO ELEITO")
+			if(novo_candidato.pessoa.situacao == "SUPLENTE" || novo_candidato.pessoa.situacao == "ELEITO" || novo_candidato.pessoa.situacao == "ELEITO POR QP" || novo_candidato.pessoa.situacao == "ELEITO POR MEDIA" || novo_candidato.pessoa.situacao == "NAO ELEITO")
 			{
-				aux->pessoa.numero = novo_candidato->pessoa.numero;
-				aux->pessoa.nome = novo_candidato->pessoa.nome;
-				aux->pessoa.partido = novo_candidato->pessoa.partido;
-				aux->pessoa.situacao = novo_candidato->pessoa.situacao;
-				aux->pessoa.cargo = novo_candidato->pessoa.cargo;
-				aux->pessoa.UF = novo_candidato->pessoa.UF;
-				aux->pessoa.turno = novo_candidato->pessoa.turno;
+				aux->pessoa.numero = novo_candidato.pessoa.numero;
+				aux->pessoa.nome = novo_candidato.pessoa.nome;
+				aux->pessoa.partido = novo_candidato.pessoa.partido;
+				aux->pessoa.situacao = novo_candidato.pessoa.situacao;
+				aux->pessoa.cargo = novo_candidato.pessoa.cargo;
+				aux->pessoa.UF = novo_candidato.pessoa.UF;
+				aux->pessoa.turno = novo_candidato.pessoa.turno;
 			}
 		}
 		/* Se não houver um candidato ainda no final do nome, somente
 		adiciona os dados do novo candidato através do ponteiro auxiliar */
 		else
 		{
-			aux->pessoa.numero = novo_candidato->pessoa.numero;
-			aux->pessoa.nome = novo_candidato->pessoa.nome;
-			aux->pessoa.partido = novo_candidato->pessoa.partido;
-			aux->pessoa.situacao = novo_candidato->pessoa.situacao;
-			aux->pessoa.cargo = novo_candidato->pessoa.cargo;
-			aux->pessoa.UF = novo_candidato->pessoa.UF;
-			aux->pessoa.turno = novo_candidato->pessoa.turno;
+			aux->pessoa.numero = novo_candidato.pessoa.numero;
+			aux->pessoa.nome = novo_candidato.pessoa.nome;
+			aux->pessoa.partido = novo_candidato.pessoa.partido;
+			aux->pessoa.situacao = novo_candidato.pessoa.situacao;
+			aux->pessoa.cargo = novo_candidato.pessoa.cargo;
+			aux->pessoa.UF = novo_candidato.pessoa.UF;
+			aux->pessoa.turno = novo_candidato.pessoa.turno;
 			aux->possui_candidato = true;								// O nodo de novo_candidato tem o dado de um candidato
 		}
 		j++;															// Passa para o próximo candidato
+		/*
+		if(aux->pessoa.nome == "FERNANDO HADDAD")
+		{
+			cout << "Nome: " << aux->pessoa.nome << endl;
+			cout << "Estado: " << aux->pessoa.UF << endl;
+			cout << "Cargo ao qual se candidatou: " << aux->pessoa.cargo << endl;
+			cout << "Numero: " << aux->pessoa.numero << endl;
+			cout << "Partido: " << aux->pessoa.partido << endl;
+			cout << "Turno: " << aux->pessoa.turno << "o TURNO" << endl;
+			cout << "Situacao: " << aux->pessoa.situacao << endl;
+		}
+		*/
 	}
 	BinaryFile.close();
 	return raiz;
+}
+
+/* Pesquisa um candidato na Trie e mostra os dados dele na tela */
+void pesquisa_trie(TrieNode *raiz, string nome_usuario)
+{
+	TrieNode *aux = raiz;
+	int tamanho_nome = nome_usuario.length();
+	bool nao_achou = false;
+	for(int i = 0; i < tamanho_nome; i++)
+	{
+		/* Testa se existe um filho referente a letra do laço */
+		if(nome_usuario[i] != 32)
+		{
+			if(aux->filhos[nome_usuario[i] - 65] == NULL)
+				nao_achou = true;
+			else
+				aux = aux->filhos[nome_usuario[i] - 65];
+		}
+		else
+		{
+			if(aux->filhos[nome_usuario[i] - 6] == NULL)
+				nao_achou = true;
+			else
+				aux = aux->filhos[nome_usuario[i] - 6];
+		}
+	}
+	/* Se chegou no final do nome na Trie, verifica se há um candidato no nodo com o mesmo nome de entrada */
+	if(!nao_achou)
+	{
+		if(aux->pessoa.nome == nome_usuario)
+		{
+			cout << endl << nome_usuario << " encontrado:" << endl << endl;
+			cout << "Nome: " << aux->pessoa.nome << endl;
+			cout << "Estado: " << aux->pessoa.UF << endl;
+			cout << "Cargo ao qual se candidatou: " << aux->pessoa.cargo << endl;
+			cout << "Numero: " << aux->pessoa.numero << endl;
+			cout << "Partido: " << aux->pessoa.partido << endl;
+			cout << "Turno: " << aux->pessoa.turno << "o TURNO" << endl;
+			cout << "Situacao: " << aux->pessoa.situacao << endl;
+		}
+		else
+			cout << endl << "Nao foi possivel encontrar " << nome_usuario << " dentro da arvore" << endl << endl;
+	}
+	else
+		cout << endl << "Nao foi possivel encontrar " << nome_usuario << " dentro da arvore" << endl << endl;
+}
+
+/* Função que cria novas tabelas, mais organizadas que a original, a partir da trie */
+void cria_tabelas_trie(TrieNode *nodo, int opcao)
+{
+	TrieNode *aux = nodo;
+	if(aux->possui_candidato)			// Se o nodo recebido por parâmetro possuir o dado de um candidato, coloca na tabela
+	{
+			cout << aux->pessoa.nome << " ";
+			cout << aux->pessoa.UF << " ";
+			cout << aux->pessoa.cargo << " ";
+			cout << aux->pessoa.numero << " ";
+			cout << aux->pessoa.partido << " ";
+			cout << aux->pessoa.turno << " ";
+			cout << aux->pessoa.situacao << endl;
+	}
+	for(int i = 0; i < ALPHABET_TAM; i++)
+	{
+		if(aux->filhos[i] != NULL)
+			cria_tabelas_trie(aux->filhos[i], opcao);
+	}
 }
 
 /**********************/
