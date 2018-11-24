@@ -267,66 +267,78 @@ void leitura_arquivo(int quantidade_linhas)
 	string line, turno_cand, estado_cand, cargo_cand, numero_cand, nome_cand, partido_cand, situacao_cand;
 	// Variaveis para laços
 	int i, j, k;
-	FILE *arquivo;
-	arquivo = fopen("dados_candidatos.bin", "wb"); // Abre o arquivo binário para inserção de dados
+	size_t tamanho;
+	ofstream BinaryFile;
+	BinaryFile.open("dados_candidatos.bin", ios::binary | ios::out | ios::trunc);	// Abre o arquivo binário para inserção de dados
 	
 	getline(DataFile, line);														// Pula a primeira linha
 	
 	for(j = 0; j < quantidade_linhas - 2; j++)
 	{	
-		
-		TrieNode *novo_candidato = novo_nodo();
 		/* Atribuição do turno do candidato */
 		for(i = 0; i < 5; i++)
 			getline(DataFile, line, ';'); 					// vai passando pelo arquivo, separando palavra por palavra com o token ';', eliminando os dados irrelevantes para a pesquisa
 		getline(DataFile, line, ';');						// Recebe o dado do turno
 		turno_cand = retira_aspas(line);					// Retira as aspas da palavra
-		novo_candidato->pessoa.turno = turno_cand;			// Define o turno do candidato
+		tamanho = turno_cand.size();
+		BinaryFile.write((char *)&tamanho, sizeof(tamanho));
+		BinaryFile.write((char *)&turno_cand[0], tamanho);
 		
 		/* Atribuição da Unidade de Federação */
 		for(i = 0; i < 6; i++)
 			getline(DataFile, line, ';'); 					// vai passando pelo arquivo, separando palavra por palavra com o token ';', eliminando os dados irrelevantes para a pesquisa
 		getline(DataFile, line, ';');						// Recebe o dado da UF
 		estado_cand = retira_aspas(line);					// Retira as aspas da palavra
-		novo_candidato->pessoa.UF = estado_cand;				// Define a unidade de federação do candidato
+		tamanho = estado_cand.size();
+		BinaryFile.write((char *)&tamanho, sizeof(tamanho));
+		BinaryFile.write((char *)&estado_cand[0], tamanho);
 		
 		/* Atribuição do Cargo */
 		getline(DataFile, line, ';');						// Pula o próximo dado, irrelevante para a nossa pesquisa
 		getline(DataFile, line, ';');						// Recebe o dado do cargo
 		cargo_cand = retira_aspas(line);					// Retira as aspas da palavra
-		novo_candidato->pessoa.cargo = cargo_cand;			// Define o cargo para o qual o candidato está concorrendo
+		tamanho = cargo_cand.size();
+		BinaryFile.write((char *)&tamanho, sizeof(tamanho));
+		BinaryFile.write((char *)&cargo_cand[0], tamanho);
 		
 		/* Atribuição do Número */
 		getline(DataFile, line, ';');						// Pula o próximo dado, irrelevante para a nossa pesquisa
 		getline(DataFile, line, ';');						// Recebe o dado do número
 		numero_cand = retira_aspas(line);					// Retira as aspas da palavra
-		novo_candidato->pessoa.numero = numero_cand;			// Define o numero do candidato na urna
+		tamanho = numero_cand.size();
+		BinaryFile.write((char *)&tamanho, sizeof(tamanho));
+		BinaryFile.write((char *)&numero_cand[0], tamanho);
 		
 		/* Atribuição do Nome */
 		getline(DataFile, line, ';');						// Recebe o dado do nome
 		nome_cand = retira_aspas(line);						// Retira as aspas da palavra
-		novo_candidato->pessoa.nome = nome_cand;				// Define o numero do candidato na urna
+		tamanho = nome_cand.size();
+		BinaryFile.write((char *)&tamanho, sizeof(tamanho));
+		BinaryFile.write((char *)&nome_cand[0], tamanho);
 		
 		/* Atribuição do Partido */
 		for(i = 0; i < 11; i++)
 			getline(DataFile, line, ';'); 					// vai passando pelo arquivo, separando palavra por palavra com o token ';', eliminando os dados irrelevantes para a pesquisa
 		getline(DataFile, line, ';');						// Recebe o dado do partido
 		partido_cand = retira_aspas(line);					// Retira as aspas da palavra
-		novo_candidato->pessoa.partido = partido_cand;		// Define o partido do candidato
+		tamanho = partido_cand.size();
+		BinaryFile.write((char *)&tamanho, sizeof(tamanho));
+		BinaryFile.write((char *)&partido_cand[0], tamanho);
 		
 		/* Atribuição da Situação do candidato após as eleições */
 		for(i = 0; i < 23; i++)
 			getline(DataFile, line, ';'); 					// vai passando pelo arquivo, separando palavra por palavra com o token ';', eliminando os dados irrelevantes para a pesquisa
 		getline(DataFile, line, ';');						// Recebe o dado do partido
 		situacao_cand = retira_aspas(line);					// Retira as aspas da palavra
-		novo_candidato->pessoa.situacao = situacao_cand;		// Define o partido do candidato
+		tamanho = situacao_cand.size();
+		BinaryFile.write((char *)&tamanho, sizeof(tamanho));
+		BinaryFile.write((char *)&situacao_cand[0], tamanho);
 		
-		fwrite(&novo_candidato, sizeof(TrieNode), 1, arquivo);	// Escreve no arquivo binário os dados do candidato
 		getline(DataFile, line);
 	}
 	
 	/* Fecha os dois arquivos */
-	fclose(arquivo);
+	BinaryFile.close();
 	DataFile.close();
 }
 
@@ -352,17 +364,56 @@ TrieNode *novo_nodo()
 
 void le_arquivo()
 {
-	TrieNode *novo_candidato;
-	FILE *arquivo;
-	fopen("dados_candidatos.bin", "rb");
-	//while(!feof(arquivo))
-	//{
-	fread(&novo_candidato, sizeof(TrieNode), 1, arquivo);
-	cout << novo_candidato->letra << " " << novo_candidato->pessoa.numero << " " << novo_candidato->pessoa.nome << " ";
-	cout << novo_candidato->pessoa.partido << " " << novo_candidato->pessoa.situacao << " " << novo_candidato->pessoa.cargo << " ";
-	cout << novo_candidato->pessoa.UF << " " << novo_candidato->pessoa.turno << endl;
-	//}
-	fclose(arquivo);
+	size_t tamanho;
+	int i = 0;
+	string new_string;
+	TrieNode novo_candidato;
+	ifstream BinaryFile;
+	BinaryFile.open("dados_candidatos.bin", ios::in | ios::binary);
+	while(i < 29145)
+	{
+		BinaryFile.read((char *)&tamanho, sizeof(tamanho));
+		new_string.resize(tamanho);
+		BinaryFile.read((char *)&new_string[0], tamanho);
+		novo_candidato.pessoa.turno = new_string;
+		
+		BinaryFile.read((char *)&tamanho, sizeof(tamanho));
+		new_string.resize(tamanho);
+		BinaryFile.read((char *)&new_string[0], tamanho);
+		novo_candidato.pessoa.UF = new_string;
+		
+		BinaryFile.read((char *)&tamanho, sizeof(tamanho));
+		new_string.resize(tamanho);
+		BinaryFile.read((char *)&new_string[0], tamanho);
+		novo_candidato.pessoa.cargo = new_string;
+		
+		BinaryFile.read((char *)&tamanho, sizeof(tamanho));
+		new_string.resize(tamanho);
+		BinaryFile.read((char *)&new_string[0], tamanho);
+		novo_candidato.pessoa.numero = new_string;
+		
+		BinaryFile.read((char *)&tamanho, sizeof(tamanho));
+		new_string.resize(tamanho);
+		BinaryFile.read((char *)&new_string[0], tamanho);
+		novo_candidato.pessoa.nome = new_string;
+		
+		BinaryFile.read((char *)&tamanho, sizeof(tamanho));
+		new_string.resize(tamanho);
+		BinaryFile.read((char *)&new_string[0], tamanho);
+		novo_candidato.pessoa.partido = new_string;
+		
+		BinaryFile.read((char *)&tamanho, sizeof(tamanho));
+		new_string.resize(tamanho);
+		BinaryFile.read((char *)&new_string[0], tamanho);
+		novo_candidato.pessoa.situacao = new_string;
+		
+		cout << novo_candidato.pessoa.numero << " " << novo_candidato.pessoa.nome << " ";
+		cout << novo_candidato.pessoa.partido << " " << novo_candidato.pessoa.cargo << " ";
+		cout << novo_candidato.pessoa.UF << " " << novo_candidato.pessoa.turno << endl;
+		
+		i++;
+	}
+	BinaryFile.close();
 	cout << "teste" << endl;
 }
 
@@ -372,14 +423,15 @@ TrieNode *add_candidatos_trie(TrieNode *raiz)
 	int nome_tam;					// Variável para o tamanho do nome do candidato
 	TrieNode *aux;					// Ponteiro auxiliar para a raíz
 	TrieNode *novo_candidato;		// Estrutura onde o candidato será mantido quando ele for lido do arquivo
-	string nome_cand;
+	string new_string;
+	size_t tamanho;					// Tamanho da próxima string a ser lida do arquivo
+	int i;							// Variavel para laço
 	
 	/* Abertura do arquivo para leitura */
 	ifstream BinaryFile;
 	BinaryFile.open("dados_candidatos.bin", ios::in | ios::binary);
 	
-	while(!BinaryFile.eof())
-	{
+	while(i < 29145)
 		BinaryFile.read((char *) &novo_candidato, sizeof(TrieNode));
 		cout << "teste" << endl;
 		nome_cand = novo_candidato->pessoa.nome;
