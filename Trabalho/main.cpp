@@ -62,35 +62,36 @@ int abertura_arquivo(); 											// Abre o arquivo onde estão os dados origin
 
 TrieNode *inicializa_trie(); 										// Inicializa a árvore Trie com a criação da raíz
 
-TrieNode *leitura_arquivo(TrieNode *raiz, int quantidade_linhas); 	// Função que realiza a leitura do arquivo e guarda os dados na Trie
+void leitura_arquivo(int quantidade_linhas); 						// Função que realiza a leitura do arquivo e guarda os dados na Trie
 
 TrieNode *novo_nodo(); 												// Função que cria um novo nodo da Trie
+void le_arquivo();
 
-TrieNode *add_nome_trie(TrieNode *raiz, TrieNode *novo_candidato); 	// Função que adiciona o nome do candidato na árvore
+TrieNode *add_candidatos_trie(TrieNode *raiz);					 	// Função que adiciona os candidatos na árvore
 
 void transfere_arq_bin(TrieNode *raiz);								// Função que transfere os dados da Trie para um arquivo binário
 
-void recursive_write(TrieNode *nodo);			// Função recursiva que guarda um nodo e seus filhos em um arquivo binario
+void recursive_write(TrieNode *nodo);								// Função recursiva que guarda um nodo e seus filhos em um arquivo binario
+
+TrieNode *recarregar_trie();										// Função que recarrega a Trie a partir do arquivo binario
+
+void recarrega_trie_recursive(TrieNode *nodo_pai, int indice);		// Função recursiva que recupera os nodos de uma trie
 
 /**********************/
 /* FUNÇÕES AUXILIARES */
 /**********************/
+bool arquivo_existe();									// Função que retorna true se o arquivo binário existe e false caso o contrário
+
 string retira_aspas(string palavra);					// Função que retira as aspas no começo e fim de uma palavra e a retorna
 
 string minusculas_para_maiusculas(string palavra);		//Função que transforma as letras minúsculas da string de entrada em letras maiúsculas
 
-/**********************/
-/* STREAM DE ARQUIVOS */
-/**********************/
+/***********************/
+/* HANDLES DE ARQUIVOS */
+/***********************/
 
 /* Stream do arquivo de entrada */
 ifstream DataFile;
-
-/* Stream do arquivo binário para escrita*/
-ofstream BinaryFile;
-
-/* Stream do arquivo binário para leitura*/
-ifstream BinaryFile_r("dados_candidatos.bin");
 
 /********/
 /* MAIN */
@@ -101,6 +102,7 @@ int main()
 	int teste_erro;
 	bool bin_existe = false;
 	string cand_user;
+	TrieNode *raiz;						// Raiz da árvore Trie
 
 	/* Menu do programa via seleção de opção */
 	system("CLS");
@@ -126,14 +128,14 @@ int main()
 				}
 				break;
 			case 2:
-				if(!BinaryFile_r)
+				if(!arquivo_existe())
 				{
 					cout << endl << "Nao existe um arquivo binario com os dados dos candidatos." << endl << endl;
 					bin_existe = false;
 				}
 				else
 				{
-					cout << "Arquivo encontrado, carregando dados..." << endl << endl;
+					cout << endl << "Arquivo encontrado!" << endl << endl;
 					bin_existe = true;
 				}
 				break;
@@ -153,19 +155,21 @@ int main()
 		/* Área de código após a abertura do arquivo de entrada obter sucesso */
 
 		/* Inicialização da Trie */
-		cout << "Criando arvore de prefixos..." << endl << endl;
-		TrieNode *raiz = inicializa_trie();
+		cout << "Lendo o arquivo de entrada e guardando" << endl;
+		cout << "os novos dados em dados_candidatos.bin" << endl << endl;
 		
-		/* Leitura de dados do arquivo */
-		raiz = leitura_arquivo(raiz, teste_erro);
-		cout << "Arvore de prefixos criada!" << endl << endl;
-		
-		/* Transferência dos dados para arquivo binário */
-		cout << "Transferindo dados para arquivo binario..." << endl << endl;
-		transfere_arq_bin(raiz);
-		cout << "Transferencia concluida!" << endl << endl;
+		/* Leitura do arquivo com dados brutos */
+		leitura_arquivo(teste_erro);
 	}
-	//recarregar_trie();
+	/* Criação da árvore de prefixos */
+	cout << "Criando arvore de prefixos" << endl << endl;
+	raiz = inicializa_trie();											// Inicializa a Trie somente com a raiz
+	
+	le_arquivo();
+	
+	//raiz = add_candidatos_trie(raiz);									// Adiciona os candidatos na arvore a partir do arquivo binario, retornando a raiz no fim
+	cout << "Arvore de prefixos criada, todos os candidatos ja foram inseridos!" << endl << endl;
+	/*
 	do
 	{
 		cout << "Por favor, selecione uma nova opcao abaixo:" <<endl << endl;
@@ -199,6 +203,7 @@ int main()
 				break;
 		}
 	} while(opcao2 != 3);
+	*/
 	return 0;
 }
 
@@ -256,17 +261,21 @@ TrieNode *inicializa_trie()
 }
 
 /* Leitura dos dados do arquivo */
-TrieNode *leitura_arquivo(TrieNode *raiz, int quantidade_linhas)
+void leitura_arquivo(int quantidade_linhas)
 {
 	// Strings para guardar os dados relevantes de cada candidato.
 	string line, turno_cand, estado_cand, cargo_cand, numero_cand, nome_cand, partido_cand, situacao_cand;
 	// Variaveis para laços
-	int i, j;
-	getline(DataFile, line);								// Pula a primeira linha
+	int i, j, k;
+	FILE *arquivo;
+	arquivo = fopen("dados_candidatos.bin", "wb"); // Abre o arquivo binário para inserção de dados
+	
+	getline(DataFile, line);														// Pula a primeira linha
+	
 	for(j = 0; j < quantidade_linhas - 2; j++)
-	{
-		TrieNode *novo_candidato = novo_nodo();
+	{	
 		
+		TrieNode *novo_candidato = novo_nodo();
 		/* Atribuição do turno do candidato */
 		for(i = 0; i < 5; i++)
 			getline(DataFile, line, ';'); 					// vai passando pelo arquivo, separando palavra por palavra com o token ';', eliminando os dados irrelevantes para a pesquisa
@@ -279,7 +288,7 @@ TrieNode *leitura_arquivo(TrieNode *raiz, int quantidade_linhas)
 			getline(DataFile, line, ';'); 					// vai passando pelo arquivo, separando palavra por palavra com o token ';', eliminando os dados irrelevantes para a pesquisa
 		getline(DataFile, line, ';');						// Recebe o dado da UF
 		estado_cand = retira_aspas(line);					// Retira as aspas da palavra
-		novo_candidato->pessoa.UF = estado_cand;			// Define a unidade de federação do candidato
+		novo_candidato->pessoa.UF = estado_cand;				// Define a unidade de federação do candidato
 		
 		/* Atribuição do Cargo */
 		getline(DataFile, line, ';');						// Pula o próximo dado, irrelevante para a nossa pesquisa
@@ -291,12 +300,12 @@ TrieNode *leitura_arquivo(TrieNode *raiz, int quantidade_linhas)
 		getline(DataFile, line, ';');						// Pula o próximo dado, irrelevante para a nossa pesquisa
 		getline(DataFile, line, ';');						// Recebe o dado do número
 		numero_cand = retira_aspas(line);					// Retira as aspas da palavra
-		novo_candidato->pessoa.numero = numero_cand;		// Define o numero do candidato na urna
+		novo_candidato->pessoa.numero = numero_cand;			// Define o numero do candidato na urna
 		
 		/* Atribuição do Nome */
 		getline(DataFile, line, ';');						// Recebe o dado do nome
 		nome_cand = retira_aspas(line);						// Retira as aspas da palavra
-		novo_candidato->pessoa.nome = nome_cand;			// Define o numero do candidato na urna
+		novo_candidato->pessoa.nome = nome_cand;				// Define o numero do candidato na urna
 		
 		/* Atribuição do Partido */
 		for(i = 0; i < 11; i++)
@@ -310,23 +319,15 @@ TrieNode *leitura_arquivo(TrieNode *raiz, int quantidade_linhas)
 			getline(DataFile, line, ';'); 					// vai passando pelo arquivo, separando palavra por palavra com o token ';', eliminando os dados irrelevantes para a pesquisa
 		getline(DataFile, line, ';');						// Recebe o dado do partido
 		situacao_cand = retira_aspas(line);					// Retira as aspas da palavra
-		novo_candidato->pessoa.situacao = situacao_cand;	// Define o partido do candidato
+		novo_candidato->pessoa.situacao = situacao_cand;		// Define o partido do candidato
 		
-		/*
-		cout << novo_candidato->pessoa.UF << endl;
-		cout << novo_candidato->pessoa.cargo << endl;
-		cout << novo_candidato->pessoa.numero << endl;
-		cout << novo_candidato->pessoa.nome << endl;
-		cout << novo_candidato->pessoa.partido << endl;
-		cout << novo_candidato->pessoa.situacao << endl;
-		*/
-		raiz = add_nome_trie(raiz, novo_candidato);
+		fwrite(&novo_candidato, sizeof(TrieNode), 1, arquivo);	// Escreve no arquivo binário os dados do candidato
 		getline(DataFile, line);
-		//cout << raiz->filhos[12]->letra << endl;
-		//cout << raiz->filhos[12]->filhos[0]->letra << endl;
 	}
+	
+	/* Fecha os dois arquivos */
+	fclose(arquivo);
 	DataFile.close();
-	return raiz;
 }
 
 /* Criação de um novo nodo da Trie */
@@ -349,60 +350,102 @@ TrieNode *novo_nodo()
 	return novo;
 }
 
-/* Criação de Prefixos na árvore, sempre que se adiciona um novo nome na árvore */
-TrieNode *add_nome_trie(TrieNode *raiz, TrieNode *novo_candidato)
+void le_arquivo()
 {
-	// Ponteiro auxiliar para a raíz
-	TrieNode *aux = raiz;
-	string nome_cand = novo_candidato->pessoa.nome;
-	int nome_tam = nome_cand.length();
-	for(int i = 0; i < nome_tam; i++)
-	{
-		/* Primeiro testamos o caso onde o caractere que estamos lidando no momento do laço
-		não é um espaço. Devemos fazer isso pois convencionamos para este programa que o 27°
-		índice guardará somente um filho nodo com o caractere espaço, e como o espaço está
-		posicionado na tabela ASCII de forma diferente da qual convencionamos para o array
-		de filhos (antes das letras maiusculas => num 32 na tabela ASCII, e depois das letras
-		maiusculas => indice 26 no nosso array), devemos fazer um caso especial para o caractere. */
-		
-		if(nome_cand[i] != 32)									// Caso o caractere não seja um espaço
-		{
-			// 65 = 'A' => conseguimos transformar o char em um índice
-			if(aux->filhos[nome_cand[i] - 65] == NULL)			// Caso o nodo ainda não tenha um filho daquela letra
-			{
-				TrieNode *nova_letra = novo_nodo();				// Criamos um novo nodo para ser um dos filhos do nodo pai (aux)
-				nova_letra->letra = nome_cand[i];				// Atribuímos a letra correta que representa aquele nodo
-				aux->filhos[nome_cand[i] - 65] = nova_letra;	// Fazemos a ligação entre o nodo pai e o nodo filho
-				aux = nova_letra;								// Atualizamos o ponteiro
-			}
-			else												// Caso o nodo pai já tenha um filho com aquela letra
-			{
-				aux = aux->filhos[nome_cand[i] - 65];			// Somente atualizamos o ponteiro auxiliar
-			}
-		}
-		else													// Caso o caractere seja um espaço
-		{
-			if(aux->filhos[nome_cand[i] - 6] == NULL)			// Caso o nodo ainda não tenha um filho daquela letra
-			{
-				TrieNode *nova_letra = novo_nodo();				// Criamos um novo nodo para ser um dos filhos do nodo pai (aux)
-				nova_letra->letra = nome_cand[i];				// Atribuímos a letra correta que representa aquele nodo
-				aux->filhos[nome_cand[i] - 6] = nova_letra;		// Fazemos a ligação entre o nodo pai e o nodo filho
-				aux = nova_letra;								// Atualizamos o ponteiro
-			}
-			else
-			{
-				aux = aux->filhos[nome_cand[i] - 6];			// Somente atualizamos o ponteiro auxiliar
-			}
-		}
-	}
-	// Coloca os dados do novo candidato no auxiliar
+	TrieNode *novo_candidato;
+	FILE *arquivo;
+	fopen("dados_candidatos.bin", "rb");
+	//while(!feof(arquivo))
+	//{
+	fread(&novo_candidato, sizeof(TrieNode), 1, arquivo);
+	cout << novo_candidato->letra << " " << novo_candidato->pessoa.numero << " " << novo_candidato->pessoa.nome << " ";
+	cout << novo_candidato->pessoa.partido << " " << novo_candidato->pessoa.situacao << " " << novo_candidato->pessoa.cargo << " ";
+	cout << novo_candidato->pessoa.UF << " " << novo_candidato->pessoa.turno << endl;
+	//}
+	fclose(arquivo);
+	cout << "teste" << endl;
+}
+
+/* Criação de Prefixos na árvore, sempre que se adiciona um novo  candidato e seu nome na árvore */
+TrieNode *add_candidatos_trie(TrieNode *raiz)
+{
+	int nome_tam;					// Variável para o tamanho do nome do candidato
+	TrieNode *aux;					// Ponteiro auxiliar para a raíz
+	TrieNode *novo_candidato;		// Estrutura onde o candidato será mantido quando ele for lido do arquivo
+	string nome_cand;
 	
-	/*Se já houver um candidato no fim do nome, devemos fazer um
-	teste para podermos substituírmos alguns dos dados dele */
-	if(aux->possui_candidato)
+	/* Abertura do arquivo para leitura */
+	ifstream BinaryFile;
+	BinaryFile.open("dados_candidatos.bin", ios::in | ios::binary);
+	
+	while(!BinaryFile.eof())
 	{
-		/* Se a situacao do novo candidato for "SUPLENTE", "ELEITO" ou "NAO ELEITO", devemos atualizar suas informações, pois as antigas não servem mais */
-		if(novo_candidato->pessoa.situacao == "SUPLENTE" || novo_candidato->pessoa.situacao == "ELEITO" || novo_candidato->pessoa.situacao == "NAO ELEITO")
+		BinaryFile.read((char *) &novo_candidato, sizeof(TrieNode));
+		cout << "teste" << endl;
+		nome_cand = novo_candidato->pessoa.nome;
+		cout << nome_cand << endl;
+		nome_tam = nome_cand.length();
+		aux = raiz;													// Colocamos o ponteiro auxiliar na raiz
+		for(int i = 0; i < nome_tam; i++)
+		{
+			/* Primeiro testamos o caso onde o caractere que estamos lidando no momento do laço
+			não é um espaço. Devemos fazer isso pois convencionamos para este programa que o 27°
+			índice guardará somente um filho nodo com o caractere espaço, e como o espaço está
+			posicionado na tabela ASCII de forma diferente da qual convencionamos para o array
+			de filhos (antes das letras maiusculas => num 32 na tabela ASCII, e depois das letras
+			maiusculas => indice 26 no nosso array), devemos fazer um caso especial para o caractere. */
+			if(nome_cand[i] != 32)									// Caso o caractere não seja um espaço
+			{
+				// 65 = 'A' => conseguimos transformar o char em um índice
+				if(aux->filhos[nome_cand[i] - 65] == NULL)			// Caso o nodo ainda não tenha um filho daquela letra
+				{
+					TrieNode *nova_letra = novo_nodo();				// Criamos um novo nodo para ser um dos filhos do nodo pai (aux)
+					nova_letra->letra = nome_cand[i];				// Atribuímos a letra correta que representa aquele nodo
+					aux->filhos[nome_cand[i] - 65] = nova_letra;	// Fazemos a ligação entre o nodo pai e o nodo filho
+					aux = nova_letra;								// Atualizamos o ponteiro
+				}
+				else												// Caso o nodo pai já tenha um filho com aquela letra
+				{
+					aux = aux->filhos[nome_cand[i] - 65];			// Somente atualizamos o ponteiro auxiliar
+				}
+			}
+			else													// Caso o caractere seja um espaço
+			{
+				if(aux->filhos[nome_cand[i] - 6] == NULL)			// Caso o nodo ainda não tenha um filho daquela letra
+				{
+					TrieNode *nova_letra = novo_nodo();				// Criamos um novo nodo para ser um dos filhos do nodo pai (aux)
+					nova_letra->letra = nome_cand[i];				// Atribuímos a letra correta que representa aquele nodo
+					aux->filhos[nome_cand[i] - 6] = nova_letra;		// Fazemos a ligação entre o nodo pai e o nodo filho
+					aux = nova_letra;								// Atualizamos o ponteiro
+				}
+				else
+				{
+					aux = aux->filhos[nome_cand[i] - 6];			// Somente atualizamos o ponteiro auxiliar
+				}
+			}
+		}
+		
+		/* Coloca os dados do novo candidato no auxiliar */
+		
+		/*Se já houver um candidato no fim do nome, devemos fazer um
+		teste para podermos substituírmos alguns dos dados dele */
+		if(aux->possui_candidato)
+		{
+			/* Se a situacao do novo candidato for "SUPLENTE", "ELEITO", "ELEITO POR QP", "ELEITO POR MEDIA" ou "NAO ELEITO", devemos atualizar suas informações, pois as antigas não servem mais */
+			if(novo_candidato->pessoa.situacao == "SUPLENTE" || novo_candidato->pessoa.situacao == "ELEITO" || novo_candidato->pessoa.situacao == "ELEITO POR QP" || novo_candidato->pessoa.situacao == "ELEITO POR MEDIA" || novo_candidato->pessoa.situacao == "NAO ELEITO")
+			{
+				aux->pessoa.numero = novo_candidato->pessoa.numero;
+				aux->pessoa.nome = novo_candidato->pessoa.nome;
+				aux->pessoa.partido = novo_candidato->pessoa.partido;
+				aux->pessoa.situacao = novo_candidato->pessoa.situacao;
+				aux->pessoa.cargo = novo_candidato->pessoa.cargo;
+				aux->pessoa.UF = novo_candidato->pessoa.UF;
+				aux->pessoa.turno = novo_candidato->pessoa.turno;
+			}
+		}
+		/* Se não houver um candidato ainda no final do nome, somente
+		adiciona os dados do novo candidato através do ponteiro auxiliar */
+		else
 		{
 			aux->pessoa.numero = novo_candidato->pessoa.numero;
 			aux->pessoa.nome = novo_candidato->pessoa.nome;
@@ -411,49 +454,28 @@ TrieNode *add_nome_trie(TrieNode *raiz, TrieNode *novo_candidato)
 			aux->pessoa.cargo = novo_candidato->pessoa.cargo;
 			aux->pessoa.UF = novo_candidato->pessoa.UF;
 			aux->pessoa.turno = novo_candidato->pessoa.turno;
+			aux->possui_candidato = true;								// O nodo de novo_candidato tem o dado de um candidato
 		}
 	}
-	/* Se não houver um candidato ainda no final do nome, somente
-	adiciona os dados do novo candidato através do ponteiro auxiliar */
-	else
-	{
-		aux->pessoa.numero = novo_candidato->pessoa.numero;
-		aux->pessoa.nome = novo_candidato->pessoa.nome;
-		aux->pessoa.partido = novo_candidato->pessoa.partido;
-		aux->pessoa.situacao = novo_candidato->pessoa.situacao;
-		aux->pessoa.cargo = novo_candidato->pessoa.cargo;
-		aux->pessoa.UF = novo_candidato->pessoa.UF;
-		aux->pessoa.turno = novo_candidato->pessoa.turno;
-		aux->possui_candidato = true;								// O nodo de novo_candidato tem o dado de um candidato
-	}
-	return raiz;
-}
-
-/* Guarda a árvore trie em um arquivo binário */
-void transfere_arq_bin(TrieNode *raiz)
-{
-	BinaryFile.open("dados_candidatos.bin", ios::binary);
-	recursive_write(raiz);
 	BinaryFile.close();
-}
-
-/* Guarda um nodo e seus filhos em um arquivo binario, recursivamente */
-void recursive_write(TrieNode *nodo)
-{
-	BinaryFile.write((char *)&nodo, sizeof(TrieNode));
-	/* Teste para chamar recursão para os filhos */
-	for(int i = 0; i < ALPHABET_TAM; i++)
-	{
-		if(nodo->filhos[i] != NULL)
-		{
-			recursive_write(nodo->filhos[i]);
-		}
-	}
+	return raiz;
 }
 
 /**********************/
 /* FUNÇÕES AUXILIARES */
 /**********************/
+
+/* Verifica a existencia de um arquivo, retornando true caso ele e xiste e false caso o contrário */
+bool arquivo_existe()
+{
+    if (FILE *file = fopen("dados_candidatos.bin", "r"))
+	{
+        fclose(file);
+        return true;
+    }
+	else
+        return false;
+}
 
 /* Retira as aspas duplas que estão a direita e a esquerda da palavra */
 string retira_aspas(string palavra)
