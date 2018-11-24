@@ -19,6 +19,8 @@ const int ALPHABET_TAM = 27;
 
 const int MAX_TAM = 30;
 
+const int QUANTIDADE_CANDIDATOS = 29145;
+
 
 /***********************/
 /* CLASSE DO CANDIDATO */
@@ -370,7 +372,7 @@ void le_arquivo()
 	TrieNode novo_candidato;
 	ifstream BinaryFile;
 	BinaryFile.open("dados_candidatos.bin", ios::in | ios::binary);
-	while(i < 29145)
+	while(i < QUANTIDADE_CANDIDATOS)
 	{
 		BinaryFile.read((char *)&tamanho, sizeof(tamanho));
 		new_string.resize(tamanho);
@@ -423,17 +425,51 @@ TrieNode *add_candidatos_trie(TrieNode *raiz)
 	int nome_tam;					// Variável para o tamanho do nome do candidato
 	TrieNode *aux;					// Ponteiro auxiliar para a raíz
 	TrieNode *novo_candidato;		// Estrutura onde o candidato será mantido quando ele for lido do arquivo
-	string new_string;
+	string new_string, nome_cand;
 	size_t tamanho;					// Tamanho da próxima string a ser lida do arquivo
-	int i;							// Variavel para laço
+	int j;							// Variavel para laço
 	
 	/* Abertura do arquivo para leitura */
 	ifstream BinaryFile;
 	BinaryFile.open("dados_candidatos.bin", ios::in | ios::binary);
 	
-	while(i < 29145)
-		BinaryFile.read((char *) &novo_candidato, sizeof(TrieNode));
-		cout << "teste" << endl;
+	while(j < QUANTIDADE_CANDIDATOS)
+	{	
+		BinaryFile.read((char *)&tamanho, sizeof(tamanho));
+		new_string.resize(tamanho);
+		BinaryFile.read((char *)&new_string[0], tamanho);
+		novo_candidato->pessoa.turno = new_string;
+		
+		BinaryFile.read((char *)&tamanho, sizeof(tamanho));
+		new_string.resize(tamanho);
+		BinaryFile.read((char *)&new_string[0], tamanho);
+		novo_candidato->pessoa.UF = new_string;
+		
+		BinaryFile.read((char *)&tamanho, sizeof(tamanho));
+		new_string.resize(tamanho);
+		BinaryFile.read((char *)&new_string[0], tamanho);
+		novo_candidato->pessoa.cargo = new_string;
+		
+		BinaryFile.read((char *)&tamanho, sizeof(tamanho));
+		new_string.resize(tamanho);
+		BinaryFile.read((char *)&new_string[0], tamanho);
+		novo_candidato->pessoa.numero = new_string;
+		
+		BinaryFile.read((char *)&tamanho, sizeof(tamanho));
+		new_string.resize(tamanho);
+		BinaryFile.read((char *)&new_string[0], tamanho);
+		novo_candidato->pessoa.nome = new_string;
+		
+		BinaryFile.read((char *)&tamanho, sizeof(tamanho));
+		new_string.resize(tamanho);
+		BinaryFile.read((char *)&new_string[0], tamanho);
+		novo_candidato->pessoa.partido = new_string;
+		
+		BinaryFile.read((char *)&tamanho, sizeof(tamanho));
+		new_string.resize(tamanho);
+		BinaryFile.read((char *)&new_string[0], tamanho);
+		novo_candidato->pessoa.situacao = new_string;
+		
 		nome_cand = novo_candidato->pessoa.nome;
 		cout << nome_cand << endl;
 		nome_tam = nome_cand.length();
@@ -508,6 +544,7 @@ TrieNode *add_candidatos_trie(TrieNode *raiz)
 			aux->pessoa.turno = novo_candidato->pessoa.turno;
 			aux->possui_candidato = true;								// O nodo de novo_candidato tem o dado de um candidato
 		}
+		j++;															// Passa para o próximo candidato
 	}
 	BinaryFile.close();
 	return raiz;
