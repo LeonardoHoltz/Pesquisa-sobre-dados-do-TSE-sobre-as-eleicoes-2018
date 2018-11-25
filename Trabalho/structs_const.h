@@ -80,6 +80,8 @@ void abre_tabelas(TrieNode *nodo, int opcao);						// Função que abre a tabela
 
 void cria_tabelas_trie(TrieNode *nodo, int opcao);					// Função que cria novas tabelas, mais organizadas que a original, a partir da trie
 
+void deleta_arvore(TrieNode *nodo);									// Função que deleta todos os nodos da árvore assim que o programa é fechado.
+
 /**********************/
 /* FUNÇÕES AUXILIARES */
 /**********************/

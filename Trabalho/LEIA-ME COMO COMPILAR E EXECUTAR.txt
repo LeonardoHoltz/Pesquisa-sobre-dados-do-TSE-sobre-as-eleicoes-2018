@@ -1,0 +1,44 @@
+Aplicação de Pesquisa sobre dados do TSE das eleições de 2018
+
+Dupla:
+Leonardo Holtz de Oliveira - 287702
+Otávio Moraes Brito Capelão - 274737
+
+Linguagem: C++
+
+Para compilar o arquivo usando G++ no Windows, siga à risca as instruções abaixo:
+
+Tenha certeza de que os arquivos functions.cpp, main.cpp e structs_const.h estão no diretório do programa:
+	main.cpp contém o menu da aplciação e as chamadas de funções usadas.
+	functions.cpp contém todas as funções utilizadas no programa.
+	structs_const.h contém os cabeçalhos de funções, estruturas de dados, classes e constantes usadas na aplicação.
+	
+Certifique-se que o arquivo candidatos_2018_BRASIL_updated.csv está no diretório do programa.
+	
+No prompt de comando vá para o diretório onde estão estas pastas e digite:
+	g++ -c main.cpp
+	g++ -c functions.cpp
+	g++ -o candidatos main.o functions.o
+
+Execute candidatos.exe para iniciar a aplicação.
+
+O menu da aplicação consiste em:
+	1 - Ler os dados do arquivo bruto*
+	2 - Ler os dados do arquivo binário**
+	3 - Fechar a aplicação
+	
+	Um segundo menu aparece ao se selecionar a opção 1 ou 2, ele consiste em:
+	1 - Pesquisar por um candidato
+	2 - Criação das tabelas referente a resolução do problema para que a aplicação serve
+	3 - Fechar a aplicação
+	
+OBS:
+* Essa opção irá criar o arquivo binário dados_candidatos.bin no diretório do programa, caso ele não exista.
+** Essa opção não funciona caso dados_candidatos.bin não estiver no diretório do programa (Se for deletado pelo usuário diretamente no diretório, por exemplo).
+
+substituicao.py é o script em Python mencionado no relatório que substitui os wide characters no arquivo original candidatos_2018_BRASIL.csv, gerando o arquivo
+candidatos_2018_BRASIL_updated.csv, que é usado na aplicação.
+
+Caso haja curiosidade, candidatos_2018_BRASIL.csv possuí um PDF explicativo, dizendo o que cada um dos 59 campos significa, esse pdf pode ser encontrado em
+http://www.tse.jus.br/eleicoes/estatisticas/repositorio-de-dados-eleitorais-1/repositorio-de-dados-eleitorais
+a aplicação utiliza somente 7 destes 59 campos.

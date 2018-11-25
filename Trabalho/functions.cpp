@@ -305,7 +305,8 @@ void pesquisa_trie(TrieNode *raiz, string nome_usuario)
 	TrieNode *aux = raiz;												// Criamos um ponteiro que aponta para a raíz da árvore
 	int tamanho_nome = nome_usuario.length();
 	bool nao_achou = false;
-	for(int i = 0; i < tamanho_nome; i++)
+	int i = 0;
+	while((i < tamanho_nome) && (!nao_achou))
 	{
 		/* Testa se existe um filho referente a letra do laço */
 		if(nome_usuario[i] != 32)										// Se o caractere não for um espaço
@@ -322,6 +323,7 @@ void pesquisa_trie(TrieNode *raiz, string nome_usuario)
 			else
 				aux = aux->filhos[nome_usuario[i] - 32];				// Atualizamos o ponteiro auxliar para apontar agora para seu filho
 		}
+		i++;
 	}
 	/* Se chegou no final do nome na Trie, verifica se há um candidato no nodo com o mesmo nome de entrada */
 	if(!nao_achou)
@@ -384,7 +386,6 @@ void cria_tabelas_trie(TrieNode *nodo, int opcao)
 			tabela << aux->pessoa.cargo << "\";\"";
 			tabela << aux->pessoa.numero << "\";\"";
 			tabela << aux->pessoa.partido << "\";\"";
-			tabela << aux->pessoa.turno << "\";\"";
 			tabela << aux->pessoa.situacao << "\"\n";
 		}
 		/* Se a opção selecionada for a criação da tabela de resultados dos candidatos que concorreram no 2° turno */
@@ -413,6 +414,17 @@ void cria_tabelas_trie(TrieNode *nodo, int opcao)
 		if(aux->filhos[i] != NULL)
 			cria_tabelas_trie(aux->filhos[i], opcao);
 	}
+}
+
+/* Função que deleta todos os nodos da árvore assim que o programa é fechado */
+void deleta_arvore(TrieNode *nodo)
+{
+	for(int i = 0; i < ALPHABET_TAM; i++)
+	{
+		if(nodo->filhos[i] != NULL)
+			deleta_arvore(nodo->filhos[i]);
+	}
+	delete nodo;
 }
 
 /**********************/
