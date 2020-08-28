@@ -20,3 +20,5 @@ Com isso, o programa devolveria 3 tabelas:
 2°) Tabela de resultados dos candidatos que concorreram no 2° turno.
 
 3°) Tabela de candidatos que tiveram sua candidatura anulada.
+
+Atualmente está se estudando a ideia de portar o programa para uma plataforma Web com interface mais delicada e com mais opções de busca.
